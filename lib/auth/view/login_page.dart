@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quest_board/auth/bloc/auth_bloc.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -8,7 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _fromKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
@@ -29,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Form(
-              key: _fromKey,
+              key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -44,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
@@ -76,6 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 5),
                   TextFormField(
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
                     textInputAction: TextInputAction.done,
@@ -117,23 +124,63 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
-                  FilledButton(
-                    onPressed: () {},
+                  const SizedBox(height: 15),
+                  BlocConsumer<AuthBloc, AuthBlocState>(
+                    listener: (context, state) {
+                      if (state is AuthAuthenticated) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Welcome ${state.user.nickname}'),
+                          ),
+                        );
+                        GetIt.I<Talker>().debug(
+                          'User ${state.user.nickname} is autenticated',
+                        );
+                        context.goNamed('campaign_list');
+                      } else if (state is AuthFailure) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(state.message)));
+                      }
+                    },
+                    builder: (context, state) {
+                      final isLoading = state is AuthLoading;
+                      return FilledButton(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                GetIt.I<Talker>().debug("Start Login request");
 
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                    child: Text(
-                      "Login",
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                                if (_formKey.currentState != null &&
+                                    _formKey.currentState!.validate()) {
+                                  context.read<AuthBloc>().add(
+                                    LoginRequest(
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text.trim(),
+                                    ),
+                                  );
+                                }
+                              },
+
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          disabledBackgroundColor: theme.colorScheme.primary
+                              .withValues(alpha: 0.6),
+
+                          disabledForegroundColor: theme.colorScheme.onPrimary,
+                        ),
+                        child: Text(
+                          isLoading ? "Loading..." : "Login",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 5),
                   Row(
@@ -141,7 +188,10 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       Text("Don't have account?"),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          context.goNamed('registration');
+                          GetIt.I<Talker>().debug("Go to registration page");
+                        },
                         child: const Text("Registration"),
                       ),
                     ],
