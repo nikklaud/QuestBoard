@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "613935286272",
+    "project_id": "dndquestboard",
+    "storage_bucket": "dndquestboard.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613935286272:android:93378fd244d5c1c58330e5",
+        "android_client_info": {
+          "package_name": "com.example.quest_board"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCxHGXxsq4XP89A2C5vG7S1kyDzhNwfIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613935286272:android:193bb272b1dbe8548330e5",
+        "android_client_info": {
+          "package_name": "com.nikklaud.quest_board"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCxHGXxsq4XP89A2C5vG7S1kyDzhNwfIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
