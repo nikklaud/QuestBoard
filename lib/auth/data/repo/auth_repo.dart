@@ -6,8 +6,10 @@ import 'package:quest_board/auth/data/repo/abstract_auth_repo.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 class AuthRepo implements AbstractAuthRepo {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+  final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firebaseFirestore;
+
+  AuthRepo({required this._firebaseAuth, required this._firebaseFirestore});
 
   @override
   Future<AppUser> login({

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quest_board/auth/bloc/auth_bloc.dart';
+import 'package:quest_board/settings/cubit/theme_cubit.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -32,7 +33,25 @@ class _RegistrationPageState extends State<RegistrationPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    bool isDarkTheme =
+        context.watch<ThemeCubit>().state.brightness == Brightness.dark;
     return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            onPressed: () {
+              context.read<ThemeCubit>().setThemeBrightness(
+                isDarkTheme ? Brightness.light : Brightness.dark,
+              );
+            },
+            icon: Icon(
+              isDarkTheme
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

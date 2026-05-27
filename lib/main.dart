@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,14 +9,32 @@ import 'package:quest_board/auth/data/repo/abstract_auth_repo.dart';
 import 'package:quest_board/auth/data/repo/auth_repo.dart';
 import 'package:quest_board/firebase_options.dart';
 import 'package:quest_board/router.dart';
+import 'package:quest_board/settings/cubit/theme_cubit.dart';
+import 'package:quest_board/settings/data/repo/abstract_settings_repo.dart';
+import 'package:quest_board/settings/data/repo/settings_repo.dart';
+import 'package:quest_board/theme/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  GetIt.I.registerLazySingleton<AbstractAuthRepo>(
+    () => AuthRepo(
+      firebaseAuth: FirebaseAuth.instance,
+      firebaseFirestore: FirebaseFirestore.instance,
+    ),
+  );
+
+  final SharedPreferences preferences = await SharedPreferences.getInstance();
+  GetIt.I.registerSingleton<SharedPreferences>(preferences);
+
+  GetIt.I.registerLazySingleton<AbstractSettingsRepo>(
+    () => SettingsRepo(preferences: GetIt.I<SharedPreferences>()),
+  );
+
   final talker = TalkerFlutter.init();
-  GetIt.I.registerLazySingleton<AbstractAuthRepo>(() => AuthRepo());
   GetIt.I.registerLazySingleton(() => talker);
 
   runApp(const MyApp());
@@ -28,17 +48,20 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AuthBloc()..add(CheckAuthStatusRequest())),
-      ],
-      child: MaterialApp.router(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: .fromSeed(
-            seedColor: const Color(0xFFFFA18C),
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
+        BlocProvider(
+          create: (_) =>
+              ThemeCubit(settingsRepo: GetIt.I<AbstractSettingsRepo>()),
         ),
-        routerConfig: runtimeRouter,
+      ],
+      child: BlocBuilder<ThemeCubit, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp.router(
+            title: 'QuestBoard',
+
+            theme: state.brightness == Brightness.dark ? darkTheme : lightTheme,
+            routerConfig: runtimeRouter,
+          );
+        },
       ),
     );
   }
