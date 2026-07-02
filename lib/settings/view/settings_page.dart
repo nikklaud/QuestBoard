@@ -20,12 +20,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final isDarkTheme =
         context.watch<ThemeCubit>().state.brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: Text('Settings')),
+      appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
+              //Logout button------------------------------------------------
               Container(
                 height: 65,
                 padding: const EdgeInsets.symmetric(
@@ -43,7 +44,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.logout_outlined),
+                    const Icon(Icons.logout_outlined),
                     const SizedBox(width: 15),
                     Expanded(
                       child: Text('Logout', style: theme.textTheme.titleLarge),
@@ -59,13 +60,15 @@ class _SettingsPageState extends State<SettingsPage> {
                         onPressed: () {
                           context.read<AuthBloc>().add(LogoutRequest());
                         },
-                        child: Icon(Icons.logout_outlined),
+                        child: const Icon(Icons.logout_outlined),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 5),
+
+              //Theme switcher------------------------------------------
               Container(
                 height: 65,
                 padding: const EdgeInsets.symmetric(
@@ -78,7 +81,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.dark_mode_outlined),
+                    const Icon(Icons.dark_mode_outlined),
                     const SizedBox(width: 15),
                     Expanded(
                       child: Text(
@@ -98,6 +101,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               const SizedBox(height: 5),
+
+              //Language switcher------------------------------------
               Container(
                 height: 65,
                 padding: const EdgeInsets.symmetric(
@@ -115,7 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.language_outlined),
+                    const Icon(Icons.language_outlined),
                     const SizedBox(width: 15),
                     Expanded(
                       child: Text(
@@ -124,9 +129,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     PopupMenuButton(
-                      icon: Icon(Icons.keyboard_arrow_down_outlined),
+                      icon: const Icon(Icons.keyboard_arrow_down_outlined),
                       itemBuilder: (context) => [
-                        PopupMenuItem(child: Text('English')),
+                        const PopupMenuItem(child: Text('English')),
                       ],
                     ),
                   ],

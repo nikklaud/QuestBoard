@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: "email",
+                      labelText: 'Email',
                       prefixIcon: Icon(Icons.mail_outline),
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -94,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
                       if (!RegExp(
                         r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                       ).hasMatch(value)) {
-                        return 'Enter correct email';
+                        return 'Enter a valid email';
                       }
                       return null;
                     },
@@ -138,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                         return 'Please enter your password';
                       }
                       if (value.length < 8) {
-                        return 'The password must be at least 8 characters long.';
+                        return 'Password must be at least 8 characters';
                       }
                       return null;
                     },

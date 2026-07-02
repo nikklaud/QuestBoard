@@ -63,7 +63,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    "Registration",
+                    'Registration',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -77,7 +77,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: "nickname",
+                      labelText: 'Nickname',
                       prefixIcon: Icon(Icons.person_outline),
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -105,7 +105,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: "email",
+                      labelText: 'Email',
                       prefixIcon: Icon(Icons.mail_outline),
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -126,7 +126,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       if (!RegExp(
                         r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                       ).hasMatch(value)) {
-                        return 'Enter correct email';
+                        return 'Enter a valid email';
                       }
                       return null;
                     },
@@ -170,7 +170,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         return 'Please enter your password';
                       }
                       if (value.length < 8) {
-                        return 'The password must be at least 8 characters long.';
+                        return 'Password must be at least 8 characters';
                       }
                       return null;
                     },

@@ -85,4 +85,17 @@ class AuthRepo implements AbstractAuthRepo {
     //logout from account
     await _firebaseAuth.signOut();
   }
+
+  @override
+  Future<void> updateUserJoinedCampaigns(String userId, List<String> campaignIds) async {
+    try {
+      await _firebaseFirestore.collection('users').doc(userId).update({
+        'joinedCampaignIds': campaignIds,
+      });
+      GetIt.I<Talker>().debug('Updated user $userId joined campaigns');
+    } catch (e) {
+      GetIt.I<Talker>().error('Error updating user joined campaigns: $e');
+      rethrow;
+    }
+  }
 }
