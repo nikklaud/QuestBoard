@@ -13,6 +13,7 @@ import 'package:quest_board/campaign_list/view/create_campaign_bottom_sheet.dart
 import 'package:quest_board/campaign_list/view/invite_campaign_sheet.dart';
 import 'package:quest_board/campaign_list/view/widgets/campaign_card.dart';
 import 'package:quest_board/campaign_list/view/widgets/empty_state.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 class CampaignListPage extends StatefulWidget {
   const CampaignListPage({super.key});
@@ -40,13 +41,11 @@ class _CampaignListPageState extends State<CampaignListPage> {
   void _loadCampaignsIfNeeded() {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      // Only load if user ID changed or not loaded yet
       if (_lastLoadedUserId != authState.user.id) {
         _lastLoadedUserId = authState.user.id;
         _campaignListCubit.loadCampaigns(authState.user.id);
       }
     } else if (authState is AuthUnauthenticated) {
-      // Reset when logged out
       _lastLoadedUserId = null;
     }
   }
@@ -101,7 +100,6 @@ class _CampaignListPageState extends State<CampaignListPage> {
     final nicknames = <String, String>{};
     final firestore = FirebaseFirestore.instance;
 
-    // Add owner
     try {
       final ownerDoc = await firestore
           .collection('users')
@@ -112,7 +110,6 @@ class _CampaignListPageState extends State<CampaignListPage> {
       }
     } catch (_) {}
 
-    // Add players
     for (final playerId in campaign.playerIds) {
       try {
         final playerDoc = await firestore
@@ -147,7 +144,6 @@ class _CampaignListPageState extends State<CampaignListPage> {
       );
       await GetIt.I<AbstractCampaignRepo>().updateCampaign(updatedCampaign);
 
-      // Refresh campaigns
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         _campaignListCubit.refresh(authState.user.id);
@@ -176,191 +172,196 @@ class _CampaignListPageState extends State<CampaignListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authState = context.watch<AuthBloc>().state;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quest Board', textAlign: TextAlign.center),
-        actions: [
-          IconButton(
-            onPressed: () {
-              context.pushNamed('settings');
-            },
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
-          ),
-        ],
-      ),
-      body: authState is AuthAuthenticated
-          ? BlocProvider<CampaignListCubit>.value(
-              value: _campaignListCubit,
-              child: BlocBuilder<CampaignListCubit, CampaignListState>(
-                builder: (context, state) {
-                  if (state is CampaignListLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (state is CampaignListError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Error: ${state.message}'),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadCampaigns,
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (state is CampaignListLoaded) {
-                    // Check if user has no campaigns at all
-                    if (state.ownedCampaigns.isEmpty &&
-                        state.joinedCampaigns.isEmpty) {
-                      return EmptyState(
-                        onCreateCampaign: _onCreateCampaignPressed,
-                      );
-                    }
-
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        final authState = context.read<AuthBloc>().state;
-                        if (authState is AuthAuthenticated) {
-                          _campaignListCubit.refresh(authState.user.id);
+    return BlocListener<AuthBloc, AuthBlocState>(
+      listener: (context, state) {
+        if (state is AuthFailure) {
+          GetIt.I<Talker>().error('Auth failure, navigating to login: ${state.message}');
+          context.goNamed('login');
+        }
+      },
+      child: BlocBuilder<AuthBloc, AuthBlocState>(
+        builder: (context, authState) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Quest Board', textAlign: TextAlign.center),
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    context.pushNamed('settings');
+                  },
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: 'Settings',
+                ),
+              ],
+            ),
+            body: authState is AuthAuthenticated
+                ? BlocProvider<CampaignListCubit>.value(
+                    value: _campaignListCubit,
+                    child: BlocBuilder<CampaignListCubit, CampaignListState>(
+                      builder: (context, state) {
+                        if (state is CampaignListLoading) {
+                          return const Center(child: CircularProgressIndicator());
                         }
+
+                        if (state is CampaignListError) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Error: ${state.message}'),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadCampaigns,
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        if (state is CampaignListLoaded) {
+                          if (state.ownedCampaigns.isEmpty &&
+                              state.joinedCampaigns.isEmpty) {
+                            return EmptyState(
+                              onCreateCampaign: _onCreateCampaignPressed,
+                            );
+                          }
+
+                          return RefreshIndicator(
+                            onRefresh: () async {
+                              final authState = context.read<AuthBloc>().state;
+                              if (authState is AuthAuthenticated) {
+                                _campaignListCubit.refresh(authState.user.id);
+                              }
+                            },
+                            child: ListView(
+                              padding: const EdgeInsets.all(16),
+                              children: [
+                                Text(
+                                  'My Campaigns',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (state.ownedCampaigns.isEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 32),
+                                    child: Center(
+                                      child: Text(
+                                        'No campaigns created yet',
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: state.ownedCampaigns.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final campaign = state.ownedCampaigns[index];
+                                      return FutureBuilder<Map<String, String>>(
+                                        future: _getPlayerNicknames(campaign),
+                                        builder: (context, snapshot) {
+                                          return CampaignCard(
+                                            campaign: campaign,
+                                            isOwner: true,
+                                            playerNicknames: snapshot.data ?? {},
+                                            onRemovePlayer: (playerId) =>
+                                                _removePlayerFromCampaign(
+                                                  campaign,
+                                                  playerId,
+                                                ),
+                                            onEdit: () {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Edit functionality in progress',
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            onInvite: () {
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                backgroundColor: Colors.transparent,
+                                                builder: (context) =>
+                                                    InviteCampaignSheet(
+                                                      campaign: campaign,
+                                                    ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                const SizedBox(height: 32),
+                                Text(
+                                  'Joined Campaigns',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (state.joinedCampaigns.isEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 32),
+                                    child: Center(
+                                      child: Text(
+                                        'You haven\'t joined any campaigns',
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: state.joinedCampaigns.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final campaign = state.joinedCampaigns[index];
+                                      return FutureBuilder<Map<String, String>>(
+                                        future: _getPlayerNicknames(campaign),
+                                        builder: (context, snapshot) {
+                                          return CampaignCard(
+                                            campaign: campaign,
+                                            isOwner: false,
+                                            playerNicknames: snapshot.data ?? {},
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return const Center(child: Text('Loading...'));
                       },
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          // Owned campaigns section
-                          Text(
-                            'My Campaigns',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (state.ownedCampaigns.isEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 32),
-                              child: Center(
-                                child: Text(
-                                  'No campaigns created yet',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: state.ownedCampaigns.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final campaign = state.ownedCampaigns[index];
-                                return FutureBuilder<Map<String, String>>(
-                                  future: _getPlayerNicknames(campaign),
-                                  builder: (context, snapshot) {
-                                    return CampaignCard(
-                                      campaign: campaign,
-                                      isOwner: true,
-                                      playerNicknames: snapshot.data ?? {},
-                                      onRemovePlayer: (playerId) =>
-                                          _removePlayerFromCampaign(
-                                            campaign,
-                                            playerId,
-                                          ),
-                                      onEdit: () {
-                                        // TODO: Implement edit functionality
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Edit functionality in progress',
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      onInvite: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) =>
-                                              InviteCampaignSheet(
-                                                campaign: campaign,
-                                              ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          const SizedBox(height: 32),
-
-                          // Joined campaigns section
-                          Text(
-                            'Joined Campaigns',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (state.joinedCampaigns.isEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 32),
-                              child: Center(
-                                child: Text(
-                                  'You haven\'t joined any campaigns',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: state.joinedCampaigns.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final campaign = state.joinedCampaigns[index];
-                                return FutureBuilder<Map<String, String>>(
-                                  future: _getPlayerNicknames(campaign),
-                                  builder: (context, snapshot) {
-                                    return CampaignCard(
-                                      campaign: campaign,
-                                      isOwner: false,
-                                      playerNicknames: snapshot.data ?? {},
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return const Center(child: Text('Загрузка данных...'));
-                },
-              ),
-            )
-          : const Center(child: Text('Please log in to view campaigns')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onCreateCampaignPressed,
-        tooltip: 'Create Campaign',
-        child: const Icon(Icons.add),
+                    ),
+                  )
+                : const Center(child: Text('Please log in to view campaigns')),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _onCreateCampaignPressed,
+              tooltip: 'Create Campaign',
+              child: const Icon(Icons.add),
+            ),
+          );
+        },
       ),
     );
   }

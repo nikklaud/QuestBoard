@@ -64,20 +64,29 @@ class AuthRepo implements AbstractAuthRepo {
 
   @override
   Future<AppUser?> getCurrentUser() async {
-    //request curent app user
     final currentAppUser = _firebaseAuth.currentUser;
     if (currentAppUser == null) {
       return null;
     }
-    final doc = await _firebaseFirestore
-        .collection('users')
-        .doc(currentAppUser.uid)
-        .get();
+    try {
+      final doc = await _firebaseFirestore
+          .collection('users')
+          .doc(currentAppUser.uid)
+          .get();
 
-    if (!doc.exists) {
+      if (!doc.exists) {
+        return null;
+      }
+      return AppUser.fromMap(doc.id, doc.data()!);
+    } on FirebaseException catch (e) {
+      GetIt.I<Talker>().warning(
+        'Firestore error in getCurrentUser (treating as unauthenticated): ${e.code}',
+      );
+      return null;
+    } catch (e) {
+      GetIt.I<Talker>().error('Unexpected error in getCurrentUser: $e');
       return null;
     }
-    return AppUser.fromMap(doc.id, doc.data()!);
   }
 
   @override

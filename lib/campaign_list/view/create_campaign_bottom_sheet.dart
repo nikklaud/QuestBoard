@@ -265,8 +265,8 @@ class _JoinCampaignTabContentState extends State<_JoinCampaignTabContent> {
               Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
-                    maxWidth: 250,
-                    maxHeight: 250,
+                    maxWidth: 500,
+                    maxHeight: 500,
                   ),
                   child: AspectRatio(
                     aspectRatio: 1,
@@ -292,13 +292,15 @@ class _JoinCampaignTabContentState extends State<_JoinCampaignTabContent> {
                   labelText: 'Invitation Code',
                   prefixIcon: const Icon(Icons.confirmation_number_outlined),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   border: const UnderlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(15),
                       topRight: Radius.circular(15),
-                      bottomLeft: Radius.circular(5),
-                      bottomRight: Radius.circular(5),
+                      bottomLeft: Radius.circular(15),
+                      bottomRight: Radius.circular(15),
                     ),
                     borderSide: BorderSide.none,
                   ),
@@ -307,7 +309,7 @@ class _JoinCampaignTabContentState extends State<_JoinCampaignTabContent> {
                 onChanged: (value) =>
                     context.read<JoinCampaignCubit>().updateInviteCode(value),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 5),
               FilledButton(
                 onPressed: state.status == JoinStatus.loading ? null : _join,
                 child: state.status == JoinStatus.loading

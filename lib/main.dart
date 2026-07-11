@@ -18,12 +18,12 @@ import 'package:quest_board/theme/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
+late final AuthBloc authBloc;
+
 Future<void> main() async {
-  //Firebase init
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  //AuthRepo init
   GetIt.I.registerLazySingleton<AbstractAuthRepo>(
     () => AuthRepo(
       firebaseAuth: FirebaseAuth.instance,
@@ -31,12 +31,10 @@ Future<void> main() async {
     ),
   );
 
-  //CampaignRepo init
   GetIt.I.registerLazySingleton<AbstractCampaignRepo>(
     () => CampaignRepo(firebaseFirestore: FirebaseFirestore.instance),
   );
 
-  //SharedPreferences init
   final SharedPreferences preferences = await SharedPreferences.getInstance();
   GetIt.I.registerSingleton<SharedPreferences>(preferences);
 
@@ -44,11 +42,10 @@ Future<void> main() async {
     () => SettingsRepo(preferences: GetIt.I<SharedPreferences>()),
   );
 
-  //Talker(logger) init
   final talker = TalkerFlutter.init();
   GetIt.I.registerLazySingleton(() => talker);
 
-  //Entry point
+  authBloc = AuthBloc();
   runApp(const MyApp());
 }
 
@@ -59,19 +56,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => AuthBloc()..add(CheckAuthStatusRequest())),
+        BlocProvider.value(value: authBloc),
         BlocProvider(
-          create: (_) =>
-              ThemeCubit(settingsRepo: GetIt.I<AbstractSettingsRepo>()),
+          create: (_) => ThemeCubit(settingsRepo: GetIt.I<AbstractSettingsRepo>()),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
           return MaterialApp.router(
             title: 'QuestBoard',
-            //TODO: Find a better way to change theme!!
             theme: state.brightness == Brightness.dark ? darkTheme : lightTheme,
-            routerConfig: runtimeRouter,
+            routerConfig: getRouter(authBloc: authBloc),
           );
         },
       ),

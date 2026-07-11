@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:quest_board/auth/data/model/app_user.dart';
@@ -10,6 +11,11 @@ part 'auth_bloc_state.dart';
 
 class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
   AuthBloc() : super(AuthBlocInitial()) {
+    // Reactive auth state listener
+    FirebaseAuth.instance.authStateChanges().listen((_) {
+      add(CheckAuthStatusRequest());
+    });
+
     //login
     on<LoginRequest>((event, emit) async {
       emit(AuthLoading());
@@ -54,6 +60,7 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
           emit(AuthUnauthenticated());
         }
       } catch (e) {
+        GetIt.I<Talker>().error('CheckAuthStatusRequest failed: $e');
         emit(AuthFailure(e.toString()));
       }
     });
@@ -68,5 +75,8 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
         GetIt.I<Talker>().error(e.toString());
       }
     });
+
+    // Initial auth check
+    Future.microtask(() => add(CheckAuthStatusRequest()));
   }
 }

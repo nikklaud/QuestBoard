@@ -19,125 +19,120 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
     final isDarkTheme =
         context.watch<ThemeCubit>().state.brightness == Brightness.dark;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              //Logout button------------------------------------------------
-              Container(
-                height: 65,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                    bottomLeft: Radius.circular(5),
-                    bottomRight: Radius.circular(5),
+    return BlocListener<AuthBloc, AuthBlocState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated || state is AuthFailure) {
+          GetIt.I<Talker>().debug('Navigating to login (state: ${state.runtimeType})');
+          context.goNamed('login');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Settings')),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Container(
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 12.0,
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.logout_outlined),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Text('Logout', style: theme.textTheme.titleLarge),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                      bottomLeft: Radius.circular(5),
+                      bottomRight: Radius.circular(5),
                     ),
-                    BlocListener<AuthBloc, AuthBlocState>(
-                      listener: (context, state) {
-                        if (state is AuthUnauthenticated) {
-                          GetIt.I<Talker>().debug('Logout');
-                          context.goNamed('login');
-                        }
-                      },
-                      child: FilledButton(
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.logout_outlined),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Text('Logout', style: theme.textTheme.titleLarge),
+                      ),
+                      FilledButton(
                         onPressed: () {
                           context.read<AuthBloc>().add(LogoutRequest());
                         },
                         child: const Icon(Icons.logout_outlined),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 5),
-
-              //Theme switcher------------------------------------------
-              Container(
-                height: 65,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.all(Radius.circular(5)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.dark_mode_outlined),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Text(
-                        'Dark theme',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                    ),
-                    Switch(
-                      value: isDarkTheme,
-                      onChanged: (value) {
-                        context.read<ThemeCubit>().setThemeBrightness(
-                          value ? Brightness.dark : Brightness.light,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 5),
-
-              //Language switcher------------------------------------
-              Container(
-                height: 65,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(5),
-                    topRight: Radius.circular(5),
-                    bottomLeft: Radius.circular(15),
-                    bottomRight: Radius.circular(15),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.language_outlined),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Text(
-                        'Language',
-                        style: theme.textTheme.titleLarge,
+                const SizedBox(height: 5),
+                Container(
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 12.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.all(Radius.circular(5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.dark_mode_outlined),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Text(
+                          'Dark theme',
+                          style: theme.textTheme.titleLarge,
+                        ),
                       ),
-                    ),
-                    PopupMenuButton(
-                      icon: const Icon(Icons.keyboard_arrow_down_outlined),
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(child: Text('English')),
-                      ],
-                    ),
-                  ],
+                      Switch(
+                        value: isDarkTheme,
+                        onChanged: (value) {
+                          context.read<ThemeCubit>().setThemeBrightness(
+                                value ? Brightness.dark : Brightness.light,
+                              );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 5),
+                Container(
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 12.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(5),
+                      topRight: Radius.circular(5),
+                      bottomLeft: Radius.circular(15),
+                      bottomRight: Radius.circular(15),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.language_outlined),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Text(
+                          'Language',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                      PopupMenuButton(
+                        icon: const Icon(Icons.keyboard_arrow_down_outlined),
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(child: Text('English')),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
