@@ -8,6 +8,10 @@ abstract class AbstractAuthRepo {
   });
   Future<AppUser> login({required String email, required String password});
   Future<AppUser?> getCurrentUser();
+  Future<AppUser?> getUserById(String userId);
   Future<void> logout();
-  Future<void> updateUserJoinedCampaigns(String userId, List<String> campaignIds);
+  Future<void> updateUserJoinedCampaigns(
+    String userId,
+    List<String> campaignIds,
+  );
 }

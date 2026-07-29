@@ -37,13 +37,13 @@ class CreateCampaignState extends Equatable {
 
   @override
   List<Object?> get props => [
-        campaignName,
-        worldName,
-        months,
-        daysOfWeek,
-        status,
-        errorMessage,
-      ];
+    campaignName,
+    worldName,
+    months,
+    daysOfWeek,
+    status,
+    errorMessage,
+  ];
 }
 
 enum CreateStatus { initial, loading, success, error }

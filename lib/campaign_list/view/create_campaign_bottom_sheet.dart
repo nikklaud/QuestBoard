@@ -83,6 +83,23 @@ class _CreateCampaignTabContentState extends State<_CreateCampaignTabContent> {
   final _worldNameController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final state = context.read<CreateCampaignCubit>().state;
+    if (_campaignNameController.text != state.campaignName) {
+      _campaignNameController.text = state.campaignName;
+    }
+    if (_worldNameController.text != state.worldName) {
+      _worldNameController.text = state.worldName;
+    }
+  }
+
+  @override
   void dispose() {
     _campaignNameController.dispose();
     _worldNameController.dispose();
@@ -220,6 +237,15 @@ class _JoinCampaignTabContentState extends State<_JoinCampaignTabContent> {
   void initState() {
     super.initState();
     _scannerController = MobileScannerController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final state = context.read<JoinCampaignCubit>().state;
+    if (_codeController.text != state.inviteCode) {
+      _codeController.text = state.inviteCode;
+    }
   }
 
   @override

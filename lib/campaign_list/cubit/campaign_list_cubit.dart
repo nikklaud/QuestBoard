@@ -25,7 +25,7 @@ class CampaignListCubit extends Cubit<CampaignListState> {
     }
   }
 
-  void refresh(String userId) {
-    loadCampaigns(userId);
+  void refresh(String userId) async {
+    await loadCampaigns(userId);
   }
 }

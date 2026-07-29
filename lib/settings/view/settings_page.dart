@@ -22,7 +22,9 @@ class _SettingsPageState extends State<SettingsPage> {
     return BlocListener<AuthBloc, AuthBlocState>(
       listener: (context, state) {
         if (state is AuthUnauthenticated || state is AuthFailure) {
-          GetIt.I<Talker>().debug('Navigating to login (state: ${state.runtimeType})');
+          GetIt.I<Talker>().debug(
+            'Navigating to login (state: ${state.runtimeType})',
+          );
           context.goNamed('login');
         }
       },
@@ -53,7 +55,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       const Icon(Icons.logout_outlined),
                       const SizedBox(width: 15),
                       Expanded(
-                        child: Text('Logout', style: theme.textTheme.titleLarge),
+                        child: Text(
+                          'Logout',
+                          style: theme.textTheme.titleLarge,
+                        ),
                       ),
                       FilledButton(
                         onPressed: () {
@@ -89,8 +94,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         value: isDarkTheme,
                         onChanged: (value) {
                           context.read<ThemeCubit>().setThemeBrightness(
-                                value ? Brightness.dark : Brightness.light,
-                              );
+                            value ? Brightness.dark : Brightness.light,
+                          );
                         },
                       ),
                     ],

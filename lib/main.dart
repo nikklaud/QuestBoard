@@ -7,6 +7,10 @@ import 'package:get_it/get_it.dart';
 import 'package:quest_board/auth/bloc/auth_bloc.dart';
 import 'package:quest_board/auth/data/repo/abstract_auth_repo.dart';
 import 'package:quest_board/auth/data/repo/auth_repo.dart';
+import 'package:quest_board/campaign_detail/data/repo/abstract_hero_repo.dart';
+import 'package:quest_board/campaign_detail/data/repo/abstract_quest_repo.dart';
+import 'package:quest_board/campaign_detail/data/repo/hero_repo.dart';
+import 'package:quest_board/campaign_detail/data/repo/quest_repo.dart';
 import 'package:quest_board/campaign_list/data/repo/abstract_campaign_repo.dart';
 import 'package:quest_board/campaign_list/data/repo/campaign_repo.dart';
 import 'package:quest_board/firebase_options.dart';
@@ -35,6 +39,14 @@ Future<void> main() async {
     () => CampaignRepo(firebaseFirestore: FirebaseFirestore.instance),
   );
 
+  GetIt.I.registerLazySingleton<AbstractQuestRepo>(
+    () => QuestRepo(firebaseFirestore: FirebaseFirestore.instance),
+  );
+
+  GetIt.I.registerLazySingleton<AbstractHeroRepo>(
+    () => HeroRepo(firebaseFirestore: FirebaseFirestore.instance),
+  );
+
   final SharedPreferences preferences = await SharedPreferences.getInstance();
   GetIt.I.registerSingleton<SharedPreferences>(preferences);
 
@@ -58,7 +70,8 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider.value(value: authBloc),
         BlocProvider(
-          create: (_) => ThemeCubit(settingsRepo: GetIt.I<AbstractSettingsRepo>()),
+          create: (_) =>
+              ThemeCubit(settingsRepo: GetIt.I<AbstractSettingsRepo>()),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quest_board/campaign_list/data/model/campaign.dart';
 
 class CampaignCard extends StatelessWidget {
@@ -7,7 +8,7 @@ class CampaignCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onInvite;
   final Function(String playerId)? onRemovePlayer;
-  final Map<String, String>? playerNicknames; // userId -> nickname
+  final Map<String, String>? playerNicknames;
 
   const CampaignCard({
     super.key,
@@ -22,7 +23,7 @@ class CampaignCard extends StatelessWidget {
   void _showPlayersDialog(BuildContext context) {
     final theme = Theme.of(context);
     final ownerNickname = playerNicknames?[campaign.ownerId] ?? 'Owner';
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -32,12 +33,8 @@ class CampaignCard extends StatelessWidget {
           child: ListView(
             shrinkWrap: true,
             children: [
-              // Owner
               ListTile(
-                leading: Icon(
-                  Icons.star,
-                  color: theme.colorScheme.primary,
-                ),
+                leading: Icon(Icons.star, color: theme.colorScheme.primary),
                 title: Text(ownerNickname),
                 trailing: Text(
                   'Owner',
@@ -46,7 +43,6 @@ class CampaignCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Players
               ...campaign.playerIds.map((playerId) {
                 final nickname = playerNicknames?[playerId] ?? 'Unknown';
                 return ListTile(
@@ -90,13 +86,12 @@ class CampaignCard extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {}, // TODO: Navigate to campaign detail
+          onTap: () => context.go('/campaign/${campaign.id}'),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with title and owner badge
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -105,9 +100,9 @@ class CampaignCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            campaign.campaignName.isEmpty 
-                              ? 'Unnamed Campaign' 
-                              : campaign.campaignName,
+                            campaign.campaignName.isEmpty
+                                ? 'Unnamed Campaign'
+                                : campaign.campaignName,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.onSurface,
@@ -117,9 +112,9 @@ class CampaignCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            campaign.worldName.isEmpty 
-                              ? 'Unknown World' 
-                              : campaign.worldName,
+                            campaign.worldName.isEmpty
+                                ? 'Unknown World'
+                                : campaign.worldName,
                             style: theme.textTheme.titleSmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
@@ -152,11 +147,9 @@ class CampaignCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Players count and action buttons in one row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Players count - clickable to show list
                     Material(
                       color: Colors.transparent,
                       child: InkWell(
@@ -185,7 +178,6 @@ class CampaignCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Action buttons (only for owner)
                     if (isOwner)
                       Row(
                         children: [
@@ -193,10 +185,15 @@ class CampaignCard extends StatelessWidget {
                             height: 36,
                             child: OutlinedButton.icon(
                               onPressed: onInvite,
-                              icon: const Icon(Icons.person_add_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.person_add_outlined,
+                                size: 18,
+                              ),
                               label: const Text('Invite'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 visualDensity: VisualDensity.compact,
                               ),
                             ),
@@ -209,7 +206,9 @@ class CampaignCard extends StatelessWidget {
                               icon: const Icon(Icons.edit_outlined, size: 18),
                               label: const Text('Edit'),
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 visualDensity: VisualDensity.compact,
                               ),
                             ),

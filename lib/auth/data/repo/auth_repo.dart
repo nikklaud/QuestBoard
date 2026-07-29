@@ -90,13 +90,37 @@ class AuthRepo implements AbstractAuthRepo {
   }
 
   @override
+  Future<AppUser?> getUserById(String userId) async {
+    try {
+      final doc = await _firebaseFirestore
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (!doc.exists) {
+        return null;
+      }
+      return AppUser.fromMap(doc.id, doc.data()!);
+    } on FirebaseException catch (e) {
+      GetIt.I<Talker>().warning('Firestore error in getUserById: ${e.code}');
+      return null;
+    } catch (e) {
+      GetIt.I<Talker>().error('Unexpected error in getUserById: $e');
+      return null;
+    }
+  }
+
+  @override
   Future<void> logout() async {
     //logout from account
     await _firebaseAuth.signOut();
   }
 
   @override
-  Future<void> updateUserJoinedCampaigns(String userId, List<String> campaignIds) async {
+  Future<void> updateUserJoinedCampaigns(
+    String userId,
+    List<String> campaignIds,
+  ) async {
     try {
       await _firebaseFirestore.collection('users').doc(userId).update({
         'joinedCampaignIds': campaignIds,

@@ -63,7 +63,11 @@ class Campaign extends Equatable {
           [],
       playerIds: List<String>.from(data['playerIds'] ?? []),
       createdAt: _parseDate(data['createdAt']),
-      updatedAt: _parseDate(data['updatedAt']),
+      // updatedAt intentionally remains null when absent; _parseDate would incorrectly
+      // return DateTime.now() instead of preserving nullability
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] as dynamic).toDate()
+          : null,
     );
   }
 
@@ -109,15 +113,15 @@ class Campaign extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        campaignName,
-        worldName,
-        ownerId,
-        inviteCode,
-        daysOfWeek,
-        months,
-        playerIds,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    campaignName,
+    worldName,
+    ownerId,
+    inviteCode,
+    daysOfWeek,
+    months,
+    playerIds,
+    createdAt,
+    updatedAt,
+  ];
 }

@@ -12,6 +12,7 @@ import 'package:quest_board/campaign_list/data/repo/abstract_campaign_repo.dart'
 import 'package:quest_board/campaign_list/view/create_campaign_bottom_sheet.dart';
 import 'package:quest_board/campaign_list/view/invite_campaign_sheet.dart';
 import 'package:quest_board/campaign_list/view/widgets/campaign_card.dart';
+import 'package:quest_board/campaign_list/view/widgets/campaign_edit_sheet.dart';
 import 'package:quest_board/campaign_list/view/widgets/empty_state.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
@@ -32,28 +33,17 @@ class _CampaignListPageState extends State<CampaignListPage> {
     _campaignListCubit = CampaignListCubit();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadCampaignsIfNeeded();
-  }
-
-  void _loadCampaignsIfNeeded() {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated) {
-      if (_lastLoadedUserId != authState.user.id) {
-        _lastLoadedUserId = authState.user.id;
-        _campaignListCubit.loadCampaigns(authState.user.id);
-      }
-    } else if (authState is AuthUnauthenticated) {
-      _lastLoadedUserId = null;
+  void _loadCampaigns(String userId) {
+    if (_lastLoadedUserId != userId) {
+      _lastLoadedUserId = userId;
+      _campaignListCubit.loadCampaigns(userId);
     }
   }
 
-  void _loadCampaigns() {
+  void _refreshCampaigns() {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      _campaignListCubit.loadCampaigns(authState.user.id);
+      _campaignListCubit.refresh(authState.user.id);
     }
   }
 
@@ -90,9 +80,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
             ),
           ),
         ),
-      ).then((_) {
-        _loadCampaigns();
-      });
+      );
     }
   }
 
@@ -163,6 +151,44 @@ class _CampaignListPageState extends State<CampaignListPage> {
     }
   }
 
+  void _deleteCampaign(Campaign campaign) async {
+    try {
+      await GetIt.I<AbstractCampaignRepo>().deleteCampaign(campaign.id);
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        _campaignListCubit.refresh(authState.user.id);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Campaign deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error deleting campaign: $e')));
+      }
+    }
+  }
+
+  void _showEditCampaignSheet(Campaign campaign) {
+    showModalBottomSheet(
+      showDragHandle: true,
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => CampaignEditSheet(
+        campaign: campaign,
+        onSaved: _refreshCampaigns,
+        onDelete: () => _deleteCampaign(campaign),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _campaignListCubit.close();
@@ -174,8 +200,15 @@ class _CampaignListPageState extends State<CampaignListPage> {
     final theme = Theme.of(context);
     return BlocListener<AuthBloc, AuthBlocState>(
       listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          _loadCampaigns(state.user.id);
+        } else if (state is AuthUnauthenticated) {
+          _lastLoadedUserId = null;
+        }
         if (state is AuthFailure) {
-          GetIt.I<Talker>().error('Auth failure, navigating to login: ${state.message}');
+          GetIt.I<Talker>().error(
+            'Auth failure, navigating to login: ${state.message}',
+          );
           context.goNamed('login');
         }
       },
@@ -200,7 +233,9 @@ class _CampaignListPageState extends State<CampaignListPage> {
                     child: BlocBuilder<CampaignListCubit, CampaignListState>(
                       builder: (context, state) {
                         if (state is CampaignListLoading) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
                         if (state is CampaignListError) {
@@ -211,7 +246,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
                                 Text('Error: ${state.message}'),
                                 const SizedBox(height: 16),
                                 ElevatedButton(
-                                  onPressed: _loadCampaigns,
+                                  onPressed: _refreshCampaigns,
                                   child: const Text('Retry'),
                                 ),
                               ],
@@ -229,10 +264,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
 
                           return RefreshIndicator(
                             onRefresh: () async {
-                              final authState = context.read<AuthBloc>().state;
-                              if (authState is AuthAuthenticated) {
-                                _campaignListCubit.refresh(authState.user.id);
-                              }
+                              _refreshCampaigns();
                             },
                             child: ListView(
                               padding: const EdgeInsets.all(16),
@@ -246,53 +278,54 @@ class _CampaignListPageState extends State<CampaignListPage> {
                                 const SizedBox(height: 12),
                                 if (state.ownedCampaigns.isEmpty)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 32),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 32,
+                                    ),
                                     child: Center(
                                       child: Text(
                                         'No campaigns created yet',
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
                                       ),
                                     ),
                                   )
                                 else
                                   ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: state.ownedCampaigns.length,
                                     separatorBuilder: (_, __) =>
                                         const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
-                                      final campaign = state.ownedCampaigns[index];
+                                      final campaign =
+                                          state.ownedCampaigns[index];
                                       return FutureBuilder<Map<String, String>>(
                                         future: _getPlayerNicknames(campaign),
                                         builder: (context, snapshot) {
                                           return CampaignCard(
                                             campaign: campaign,
                                             isOwner: true,
-                                            playerNicknames: snapshot.data ?? {},
+                                            playerNicknames:
+                                                snapshot.data ?? {},
                                             onRemovePlayer: (playerId) =>
                                                 _removePlayerFromCampaign(
                                                   campaign,
                                                   playerId,
                                                 ),
                                             onEdit: () {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Edit functionality in progress',
-                                                  ),
-                                                ),
-                                              );
+                                              _showEditCampaignSheet(campaign);
                                             },
                                             onInvite: () {
                                               showModalBottomSheet(
                                                 context: context,
                                                 isScrollControlled: true,
-                                                backgroundColor: Colors.transparent,
+                                                backgroundColor:
+                                                    Colors.transparent,
                                                 builder: (context) =>
                                                     InviteCampaignSheet(
                                                       campaign: campaign,
@@ -314,32 +347,40 @@ class _CampaignListPageState extends State<CampaignListPage> {
                                 const SizedBox(height: 12),
                                 if (state.joinedCampaigns.isEmpty)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 32),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 32,
+                                    ),
                                     child: Center(
                                       child: Text(
                                         'You haven\'t joined any campaigns',
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
                                       ),
                                     ),
                                   )
                                 else
                                   ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: state.joinedCampaigns.length,
                                     separatorBuilder: (_, __) =>
                                         const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
-                                      final campaign = state.joinedCampaigns[index];
+                                      final campaign =
+                                          state.joinedCampaigns[index];
                                       return FutureBuilder<Map<String, String>>(
                                         future: _getPlayerNicknames(campaign),
                                         builder: (context, snapshot) {
                                           return CampaignCard(
                                             campaign: campaign,
                                             isOwner: false,
-                                            playerNicknames: snapshot.data ?? {},
+                                            playerNicknames:
+                                                snapshot.data ?? {},
                                           );
                                         },
                                       );

@@ -8,7 +8,7 @@ class CampaignRepo implements AbstractCampaignRepo {
   final FirebaseFirestore _firebaseFirestore;
 
   CampaignRepo({required FirebaseFirestore firebaseFirestore})
-      : _firebaseFirestore = firebaseFirestore;
+    : _firebaseFirestore = firebaseFirestore;
 
   @override
   Future<List<Campaign>> getCampaignsByOwner(String userId) async {
@@ -75,7 +75,10 @@ class CampaignRepo implements AbstractCampaignRepo {
       if (snapshot.docs.isEmpty) {
         return null;
       }
-      return Campaign.fromMap(snapshot.docs.first.id, snapshot.docs.first.data());
+      return Campaign.fromMap(
+        snapshot.docs.first.id,
+        snapshot.docs.first.data(),
+      );
     } catch (e) {
       GetIt.I<Talker>().error('Error getting campaign by invite code: $e');
       rethrow;
@@ -111,7 +114,32 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<void> deleteCampaign(String campaignId) async {
     try {
-      await _firebaseFirestore.collection('campaigns').doc(campaignId).delete();
+      final batch = _firebaseFirestore.batch();
+
+      // Delete quests
+      final questsSnapshot = await _firebaseFirestore
+          .collection('quests')
+          .where('campaignId', isEqualTo: campaignId)
+          .get();
+      for (final doc in questsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Delete heroes
+      final heroesSnapshot = await _firebaseFirestore
+          .collection('heroes')
+          .where('campaignId', isEqualTo: campaignId)
+          .get();
+      for (final doc in heroesSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Delete campaign
+      final campaignRef = _firebaseFirestore.collection('campaigns').doc(campaignId);
+      batch.delete(campaignRef);
+
+      await batch.commit();
+      GetIt.I<Talker>().debug('Campaign and related data deleted: $campaignId');
     } catch (e) {
       GetIt.I<Talker>().error('Error deleting campaign: $e');
       rethrow;

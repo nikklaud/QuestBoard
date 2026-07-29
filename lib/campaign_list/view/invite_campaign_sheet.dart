@@ -36,7 +36,9 @@ class InviteCampaignSheet extends StatelessWidget {
             children: [
               Text(
                 'Invite to Campaign',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
@@ -55,13 +57,13 @@ class InviteCampaignSheet extends StatelessWidget {
                 backgroundColor: Colors.white,
               ),
               const SizedBox(height: 24),
-              Text(
-                'Invitation Code',
-                style: theme.textTheme.labelLarge,
-              ),
+              Text('Invitation Code', style: theme.textTheme.labelLarge),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),

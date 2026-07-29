@@ -12,8 +12,8 @@ part 'create_campaign_state.dart';
 
 class CreateCampaignCubit extends Cubit<CreateCampaignState> {
   CreateCampaignCubit({required String ownerId})
-      : _ownerId = ownerId,
-        super(const CreateCampaignState());
+    : _ownerId = ownerId,
+      super(const CreateCampaignState());
 
   final String _ownerId;
 
@@ -26,6 +26,10 @@ class CreateCampaignCubit extends Cubit<CreateCampaignState> {
   }
 
   void addMonth(String name, int daysCount) {
+    if (daysCount > 128) {
+      GetIt.I<Talker>().warning('Max 128 days per month exceeded');
+      return;
+    }
     final newMonth = CustomMonth(
       name: name,
       daysCount: daysCount,
@@ -36,6 +40,10 @@ class CreateCampaignCubit extends Cubit<CreateCampaignState> {
   }
 
   void updateMonth(int index, String name, int daysCount) {
+    if (daysCount > 128) {
+      GetIt.I<Talker>().warning('Max 128 days per month exceeded');
+      return;
+    }
     final updatedMonths = [...state.months];
     updatedMonths[index] = CustomMonth(
       name: name,
@@ -47,12 +55,22 @@ class CreateCampaignCubit extends Cubit<CreateCampaignState> {
 
   void removeMonth(int index) {
     final updatedMonths = [...state.months]..removeAt(index);
-    emit(state.copyWith(
-      months: updatedMonths.asMap().entries.map((e) => e.value.copyWith(order: e.key)).toList(),
-    ));
+    emit(
+      state.copyWith(
+        months: updatedMonths
+            .asMap()
+            .entries
+            .map((e) => e.value.copyWith(order: e.key))
+            .toList(),
+      ),
+    );
   }
 
   void addDay(String name) {
+    if (state.daysOfWeek.length >= 16) {
+      GetIt.I<Talker>().warning('Max 16 days per week exceeded');
+      return;
+    }
     final newDay = DayOfWeek(name: name, order: state.daysOfWeek.length);
     final updatedDays = [...state.daysOfWeek, newDay];
     emit(state.copyWith(daysOfWeek: updatedDays));
@@ -66,14 +84,52 @@ class CreateCampaignCubit extends Cubit<CreateCampaignState> {
 
   void removeDay(int index) {
     final updatedDays = [...state.daysOfWeek]..removeAt(index);
-    emit(state.copyWith(
-      daysOfWeek: updatedDays.asMap().entries.map((e) => e.value.copyWith(order: e.key)).toList(),
-    ));
+    emit(
+      state.copyWith(
+        daysOfWeek: updatedDays
+            .asMap()
+            .entries
+            .map((e) => e.value.copyWith(order: e.key))
+            .toList(),
+      ),
+    );
   }
 
   Future<void> submit() async {
     if (state.campaignName.isEmpty || state.worldName.isEmpty) {
-      emit(state.copyWith(status: CreateStatus.error, errorMessage: 'Campaign name and world name are required'));
+      emit(
+        state.copyWith(
+          status: CreateStatus.error,
+          errorMessage: 'Campaign name and world name are required',
+        ),
+      );
+      return;
+    }
+    if (state.months.isEmpty) {
+      emit(
+        state.copyWith(
+          status: CreateStatus.error,
+          errorMessage: 'At least one month required',
+        ),
+      );
+      return;
+    }
+    if (state.daysOfWeek.isEmpty) {
+      emit(
+        state.copyWith(
+          status: CreateStatus.error,
+          errorMessage: 'At least one day of week required',
+        ),
+      );
+      return;
+    }
+    if (state.daysOfWeek.length > 16) {
+      emit(
+        state.copyWith(
+          status: CreateStatus.error,
+          errorMessage: 'Max 16 days per week allowed',
+        ),
+      );
       return;
     }
 
@@ -96,12 +152,18 @@ class CreateCampaignCubit extends Cubit<CreateCampaignState> {
       emit(state.copyWith(status: CreateStatus.success));
     } catch (e) {
       GetIt.I<Talker>().error('Error creating campaign: $e');
-      emit(state.copyWith(status: CreateStatus.error, errorMessage: e.toString()));
+      emit(
+        state.copyWith(status: CreateStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
   String _generateInviteCode() {
-    final random = const Uuid().v4().replaceAll('-', '').substring(0, 8).toUpperCase();
+    final random = const Uuid()
+        .v4()
+        .replaceAll('-', '')
+        .substring(0, 8)
+        .toUpperCase();
     return random;
   }
 

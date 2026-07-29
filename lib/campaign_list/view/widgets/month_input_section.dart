@@ -124,8 +124,8 @@ class _MonthInputSectionState extends State<MonthInputSection> {
                       return 'Required';
                     }
                     final days = int.tryParse(value);
-                    if (days == null || days < 1) {
-                      return 'Invalid';
+                    if (days == null || days < 1 || days > 128) {
+                      return '1-128 days required';
                     }
                     return null;
                   },
