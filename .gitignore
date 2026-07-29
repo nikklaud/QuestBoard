@@ -53,3 +53,16 @@ android/
 ios/
 
 .opencode/
+.agents/
+
+# Dart/Flutter
+pubspec.lock
+.metadata
+
+# Firebase
+firebase.json
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Skills
+skills-lock.json
