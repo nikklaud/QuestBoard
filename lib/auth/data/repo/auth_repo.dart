@@ -32,7 +32,13 @@ class AuthRepo implements AbstractAuthRepo {
       throw Exception('User with email: $email not found');
     }
 
-    return AppUser.fromMap(doc.id, doc.data()!);
+    final user = AppUser.fromMap(doc.id, doc.data()!);
+    // Backfill the non-sensitive display profile for accounts created before
+    // Firestore rules separated private user data from public nicknames.
+    await _firebaseFirestore.collection('publicProfiles').doc(uid).set({
+      'nickname': user.nickname,
+    });
+    return user;
   }
 
   @override
@@ -58,7 +64,12 @@ class AuthRepo implements AbstractAuthRepo {
       joinedCampaignIds: [],
     );
 
-    await _firebaseFirestore.collection('users').doc(uid).set(user.toMap());
+    final batch = _firebaseFirestore.batch();
+    batch.set(_firebaseFirestore.collection('users').doc(uid), user.toMap());
+    batch.set(_firebaseFirestore.collection('publicProfiles').doc(uid), {
+      'nickname': nickname,
+    });
+    await batch.commit();
     return user;
   }
 
@@ -77,7 +88,11 @@ class AuthRepo implements AbstractAuthRepo {
       if (!doc.exists) {
         return null;
       }
-      return AppUser.fromMap(doc.id, doc.data()!);
+      final user = AppUser.fromMap(doc.id, doc.data()!);
+      await _firebaseFirestore.collection('publicProfiles').doc(user.id).set({
+        'nickname': user.nickname,
+      });
+      return user;
     } on FirebaseException catch (e) {
       GetIt.I<Talker>().warning(
         'Firestore error in getCurrentUser (treating as unauthenticated): ${e.code}',
@@ -90,22 +105,24 @@ class AuthRepo implements AbstractAuthRepo {
   }
 
   @override
-  Future<AppUser?> getUserById(String userId) async {
+  Future<String?> getPublicNicknameById(String userId) async {
     try {
       final doc = await _firebaseFirestore
-          .collection('users')
+          .collection('publicProfiles')
           .doc(userId)
           .get();
 
       if (!doc.exists) {
         return null;
       }
-      return AppUser.fromMap(doc.id, doc.data()!);
+      return doc.data()?['nickname'] as String?;
     } on FirebaseException catch (e) {
-      GetIt.I<Talker>().warning('Firestore error in getUserById: ${e.code}');
+      GetIt.I<Talker>().warning(
+        'Firestore error in getPublicNicknameById: ${e.code}',
+      );
       return null;
     } catch (e) {
-      GetIt.I<Talker>().error('Unexpected error in getUserById: $e');
+      GetIt.I<Talker>().error('Unexpected error in getPublicNicknameById: $e');
       return null;
     }
   }
@@ -114,6 +131,41 @@ class AuthRepo implements AbstractAuthRepo {
   Future<void> logout() async {
     //logout from account
     await _firebaseAuth.signOut();
+  }
+
+  @override
+  Future<void> deleteAccount({required String nickname}) async {
+    final authUser = _firebaseAuth.currentUser;
+    if (authUser == null) {
+      throw StateError('No signed-in user found');
+    }
+
+    final userRef = _firebaseFirestore.collection('users').doc(authUser.uid);
+    final userDoc = await userRef.get();
+    final currentNickname = userDoc.data()?['nickname'] as String?;
+    if (currentNickname == null || nickname.trim() != currentNickname) {
+      throw ArgumentError('The nickname does not match');
+    }
+
+    // Delete Firestore profile data while the user still has an authenticated
+    // Firestore session, then remove the Firebase Authentication identity.
+    final batch = _firebaseFirestore.batch();
+    batch.delete(userRef);
+    batch.delete(
+      _firebaseFirestore.collection('publicProfiles').doc(authUser.uid),
+    );
+    await batch.commit();
+
+    try {
+      await authUser.delete();
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'requires-recent-login') {
+        throw StateError(
+          'For security, sign out and sign in again before deleting the account.',
+        );
+      }
+      rethrow;
+    }
   }
 
   @override

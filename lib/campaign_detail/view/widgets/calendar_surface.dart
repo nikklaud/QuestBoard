@@ -50,8 +50,6 @@ class CalendarSurface extends StatelessWidget {
             onNext: onNext,
           ),
           const SizedBox(height: 20),
-          DaysOfWeekHeader(daysOfWeek: sortedDaysOfWeek),
-          const SizedBox(height: 14),
           CalendarMonthGrid(
             month: month,
             daysOfWeek: sortedDaysOfWeek,
@@ -78,7 +76,7 @@ class CalendarCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        color: colorScheme.secondary,
+        color: colorScheme.surfaceContainer,
         boxShadow: [
           BoxShadow(
             color: colorScheme.shadow.withValues(alpha: 0.08),
@@ -118,8 +116,10 @@ class MonthNavigator extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        NavigatorButton(icon: Icons.chevron_left, onPressed: onPrevious),
-        const SizedBox(width: 10),
+        if (onPrevious != null) ...[
+          NavigatorButton(icon: Icons.chevron_left, onPressed: onPrevious),
+          const SizedBox(width: 10),
+        ],
         Text(
           months[currentMonthIndex].name,
           style: theme.textTheme.titleLarge?.copyWith(
@@ -153,50 +153,88 @@ class CalendarMonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sortedDaysOfWeek = List<DayOfWeek>.from(daysOfWeek)
-      ..sort((a, b) => a.order.compareTo(b.order));
-
-    if (sortedDaysOfWeek.isEmpty) {
+    if (daysOfWeek.isEmpty) {
       return const Center(child: Text('Days of week not configured'));
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final dayCount = sortedDaysOfWeek.length;
-        final availableWidth = constraints.maxWidth - (dayCount - 1) * 8;
-        final cellSize = (availableWidth / dayCount).clamp(32.0, 80.0);
+        final dayCount = daysOfWeek.length;
+        final gap = (8.0 - (dayCount - 7) * 0.5).clamp(3.0, 8.0).toDouble();
+        final availableWidth = constraints.maxWidth - (dayCount - 1) * gap;
+        final minCellSize = switch (dayCount) {
+          <= 7 => 44.0,
+          <= 10 => 36.0,
+          <= 14 => 30.0,
+          _ => 26.0,
+        };
+        final cellSize = (availableWidth / dayCount)
+            .clamp(minCellSize, double.infinity)
+            .toDouble();
+        final childAspectRatio = switch (dayCount) {
+          <= 3 => 1.35,
+          <= 5 => 1.15,
+          _ => 1.0,
+        };
+        final cellHeight = cellSize / childAspectRatio;
+        final itemCount = monthOffset + month.daysCount;
+        final rowCount = (itemCount / dayCount).ceil();
+        final contentHeight = rowCount * cellHeight + (rowCount - 1) * gap;
+        const maxViewportHeight = 560.0;
+        final viewportHeight = contentHeight
+            .clamp(0.0, maxViewportHeight)
+            .toDouble();
+        final gridWidth = dayCount * cellSize + (dayCount - 1) * gap;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: dayCount,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 1,
+        // `shrinkWrap: true` made the parent ListView lay out every day in a
+        // month before it could paint anything. Keep a bounded viewport so the
+        // GridView can lazily build only the visible cells (plus its cache).
+        return SizedBox(
+          height: viewportHeight + 34,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: gridWidth,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 20,
+                    child: DaysOfWeekHeader(daysOfWeek: daysOfWeek),
+                  ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: GridView.builder(
+                      primary: false,
+                      padding: EdgeInsets.zero,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: dayCount,
+                        mainAxisSpacing: gap,
+                        crossAxisSpacing: gap,
+                        childAspectRatio: childAspectRatio,
+                      ),
+                      itemCount: itemCount,
+                      itemBuilder: (context, index) {
+                        if (index < monthOffset) {
+                          return const SizedBox.shrink();
+                        }
+
+                        final day = index - monthOffset + 1;
+                        final cellQuests =
+                            questsByCell['$monthIndex-$day'] ?? const [];
+
+                        return CalendarDayCell(
+                          day: day,
+                          quests: cellQuests,
+                          cellSize: cellSize,
+                          onTap: () => onCellTap(day),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          itemCount: monthOffset + month.daysCount,
-          itemBuilder: (context, index) {
-            if (index < monthOffset) {
-              return const SizedBox.shrink();
-            }
-
-            final day = index - monthOffset + 1;
-            final cellQuests = questsByCell['$monthIndex-$day'] ?? const [];
-
-            return ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: cellSize,
-                minHeight: cellSize,
-              ),
-              child: CalendarDayCell(
-                day: day,
-                quests: cellQuests,
-                onTap: () => onCellTap(day),
-              ),
-            );
-          },
         );
       },
     );

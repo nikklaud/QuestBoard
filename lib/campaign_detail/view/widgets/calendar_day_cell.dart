@@ -5,11 +5,13 @@ class CalendarDayCell extends StatelessWidget {
   const CalendarDayCell({
     required this.day,
     required this.quests,
+    required this.cellSize,
     required this.onTap,
   });
 
   final int day;
   final List<Quest> quests;
+  final double cellSize;
   final VoidCallback onTap;
 
   @override
@@ -22,6 +24,9 @@ class CalendarDayCell extends StatelessWidget {
     final textColor = hasQuests
         ? colorScheme.onPrimaryContainer
         : colorScheme.onSurfaceVariant;
+    final compact = cellSize < 40;
+    final padding = cellSize < 32 ? 3.0 : (compact ? 6.0 : 10.0);
+    final dayFontSize = cellSize < 32 ? 12.0 : (compact ? 14.0 : null);
 
     return Material(
       color: Colors.transparent,
@@ -34,7 +39,7 @@ class CalendarDayCell extends StatelessWidget {
             color: backgroundColor,
             borderRadius: BorderRadius.circular(14),
           ),
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(padding),
           child: Stack(
             children: [
               Align(
@@ -44,13 +49,14 @@ class CalendarDayCell extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: textColor,
                     fontWeight: FontWeight.w500,
+                    fontSize: dayFontSize,
                   ),
                 ),
               ),
               if (hasQuests)
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: QuestDots(quests: quests),
+                  child: QuestDots(quests: quests, compact: compact),
                 ),
             ],
           ),
@@ -61,16 +67,20 @@ class CalendarDayCell extends StatelessWidget {
 }
 
 class QuestDots extends StatelessWidget {
-  const QuestDots({required this.quests});
+  const QuestDots({required this.quests, required this.compact});
 
   final List<Quest> quests;
+  final bool compact;
 
   static const int maxDots = 7;
 
   @override
   Widget build(BuildContext context) {
-    final visibleCount = quests.length <= maxDots ? quests.length : maxDots - 1;
-    final showMore = quests.length > maxDots;
+    final maximumVisibleDots = compact ? 3 : maxDots;
+    final visibleCount = quests.length <= maximumVisibleDots
+        ? quests.length
+        : maximumVisibleDots - 1;
+    final showMore = quests.length > maximumVisibleDots;
 
     return Wrap(
       spacing: 2,

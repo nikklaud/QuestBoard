@@ -12,7 +12,9 @@ class LoginRequest extends AuthBlocEvent {
   LoginRequest({required this.email, required this.password});
   //equatable
   @override
-  List<Object?> get props => [email, password];
+  // Never include credentials in equality/debug representations. This event is
+  // still dispatched normally; Bloc does not deduplicate equal events.
+  List<Object?> get props => [email];
 }
 
 class RegisterRequest extends AuthBlocEvent {
@@ -27,7 +29,8 @@ class RegisterRequest extends AuthBlocEvent {
   });
 
   @override
-  List<Object?> get props => [email, password, nickname];
+  // See LoginRequest: credentials must not reach diagnostic output.
+  List<Object?> get props => [email, nickname];
 }
 
 class CheckAuthStatusRequest extends AuthBlocEvent {
@@ -38,4 +41,13 @@ class CheckAuthStatusRequest extends AuthBlocEvent {
 class LogoutRequest extends AuthBlocEvent {
   @override
   List<Object?> get props => [];
+}
+
+class DeleteAccountRequest extends AuthBlocEvent {
+  DeleteAccountRequest({required this.nickname});
+
+  final String nickname;
+
+  @override
+  List<Object?> get props => [nickname];
 }

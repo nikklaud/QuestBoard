@@ -76,6 +76,19 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
       }
     });
 
+    on<DeleteAccountRequest>((event, emit) async {
+      emit(AuthLoading());
+      try {
+        await GetIt.I<AbstractAuthRepo>().deleteAccount(
+          nickname: event.nickname,
+        );
+        emit(AuthUnauthenticated());
+      } catch (e) {
+        GetIt.I<Talker>().error('Account deletion failed: $e');
+        emit(AuthFailure(e.toString()));
+      }
+    });
+
     // Initial auth check
     Future.microtask(() => add(CheckAuthStatusRequest()));
   }

@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isCampaignMember(campaignId) {
+      let campaign = get(/databases/$(database)/documents/campaigns/$(campaignId));
+      return isCampaignMemberData(campaign.data);
+    }
+
+    function isCampaignMemberData(campaign) {
+      return signedIn()
+          && (campaign.ownerId == request.auth.uid
+              || campaign.playerIds.hasAny([request.auth.uid]));
+    }
+
+    function isCampaignOwner(campaignId) {
+      return signedIn()
+          && get(/databases/$(database)/documents/campaigns/$(campaignId))
+              .data.ownerId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      // Email and campaign history are private.
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['joinedCampaignIds']);
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /publicProfiles/{userId} {
+      // Only a display name belongs here; never add email or credentials.
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['nickname']);
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /campaigns/{campaignId} {
+      allow get, list: if isCampaignMemberData(resource.data);
+      allow create: if signedIn()
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.playerIds.size() == 0;
+      allow update: if isCampaignOwner(campaignId) || (
+          signedIn()
+          && !resource.data.playerIds.hasAny([request.auth.uid])
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['playerIds', 'updatedAt'])
+          && request.resource.data.playerIds.size()
+              == resource.data.playerIds.size() + 1
+          && request.resource.data.playerIds.hasAll(resource.data.playerIds)
+          && request.resource.data.playerIds.hasAny([request.auth.uid])
+        );
+      allow delete: if isCampaignOwner(campaignId);
+    }
+
+    match /campaignInvites/{inviteCode} {
+      // A code yields only a campaign ID, never its members or content.
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['campaignId'])
+          && getAfter(/databases/$(database)/documents/campaigns/$(request.resource.data.campaignId))
+              .data.ownerId == request.auth.uid;
+      allow update: if false;
+      allow delete: if signedIn()
+          && get(/databases/$(database)/documents/campaigns/$(resource.data.campaignId))
+              .data.ownerId == request.auth.uid;
+    }
+
+    match /quests/{questId} {
+      allow read: if isCampaignMember(resource.data.campaignId);
+      allow create: if isCampaignOwner(request.resource.data.campaignId);
+      allow update, delete: if isCampaignOwner(resource.data.campaignId);
+    }
+
+    match /heroes/{heroId} {
+      allow read: if isCampaignMember(resource.data.campaignId);
+      allow create: if isCampaignOwner(request.resource.data.campaignId);
+      allow update, delete: if isCampaignOwner(resource.data.campaignId);
+    }
+  }
+}

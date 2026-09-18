@@ -49,7 +49,7 @@ GoRouter getRouter({required AuthBloc authBloc}) {
       }
 
       if (loggedIn && loggingIn) {
-        return '/';
+        return '/campaign_list';
       }
 
       return null;

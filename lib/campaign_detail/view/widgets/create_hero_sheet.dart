@@ -91,9 +91,9 @@ class _CreateHeroSheetState extends State<CreateHeroSheet> {
 
     for (final playerId in playerIds) {
       try {
-        final user = await authRepo.getUserById(playerId);
-        if (user != null) {
-          nicknames[playerId] = user.nickname;
+        final nickname = await authRepo.getPublicNicknameById(playerId);
+        if (nickname != null) {
+          nicknames[playerId] = nickname;
         }
       } catch (_) {}
     }

@@ -29,7 +29,11 @@ class CampaignCalendarPage extends StatefulWidget {
 
 class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
   late final CampaignDetailCubit _cubit;
+  // This is a chronological month number, not an index into `campaign.months`.
+  // The configured months form one repeating calendar cycle.
   int _currentMonthIndex = 0;
+  List<Quest>? _cachedQuests;
+  final Map<int, List<Quest>> _questsByMonthCache = {};
 
   @override
   void initState() {
@@ -51,30 +55,52 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
     int monthIndex,
     int daysOfWeekLength,
   ) {
-    if (daysOfWeekLength == 0) return 0;
-    int offset = 0;
-    for (int i = 0; i < monthIndex; i++) {
-      offset = (offset + sortedMonths[i].daysCount) % daysOfWeekLength;
+    if (daysOfWeekLength == 0 || sortedMonths.isEmpty || monthIndex <= 0) {
+      return 0;
     }
-    return offset;
+
+    // A calendar can be moved forward indefinitely. Sum one configured cycle
+    // once, then account only for months inside the current cycle. This avoids
+    // doing work proportional to the number of months the user has navigated.
+    final cycleDays = sortedMonths.fold<int>(
+      0,
+      (total, month) => total + month.daysCount,
+    );
+    final completedCycles = monthIndex ~/ sortedMonths.length;
+    final monthInCycle = monthIndex % sortedMonths.length;
+    final daysBeforeCurrentMonth = sortedMonths
+        .take(monthInCycle)
+        .fold<int>(0, (total, month) => total + month.daysCount);
+
+    return (completedCycles * cycleDays + daysBeforeCurrentMonth) %
+        daysOfWeekLength;
   }
 
   List<Quest> questsForMonth(List<Quest> quests, int monthIndex) {
-    final monthQuests = quests.where((quest) {
-      return quest.startMonthIndex <= monthIndex &&
-          quest.endMonthIndex >= monthIndex;
-    }).toList();
+    if (_cachedQuests != quests) {
+      _cachedQuests = quests;
+      _questsByMonthCache.clear();
+    }
 
-    monthQuests.sort((left, right) {
-      final startCompare = left.startDayNumber.compareTo(right.startDayNumber);
-      if (startCompare != 0) {
-        return startCompare;
-      }
+    return _questsByMonthCache.putIfAbsent(monthIndex, () {
+      final monthQuests = quests.where((quest) {
+        return quest.startMonthIndex <= monthIndex &&
+            quest.endMonthIndex >= monthIndex;
+      }).toList();
 
-      return left.title.compareTo(right.title);
+      monthQuests.sort((left, right) {
+        final startCompare = left.startDayNumber.compareTo(
+          right.startDayNumber,
+        );
+        if (startCompare != 0) {
+          return startCompare;
+        }
+
+        return left.title.compareTo(right.title);
+      });
+
+      return monthQuests;
     });
-
-    return monthQuests;
   }
 
   Future<Map<String, String>> getPlayerNicknames(List<String> playerIds) async {
@@ -83,9 +109,9 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
 
     for (final playerId in playerIds) {
       try {
-        final user = await authRepo.getUserById(playerId);
-        if (user != null) {
-          nicknames[playerId] = user.nickname;
+        final nickname = await authRepo.getPublicNicknameById(playerId);
+        if (nickname != null) {
+          nicknames[playerId] = nickname;
         }
       } catch (_) {}
     }
@@ -146,7 +172,7 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
               title: Text(campaign?.worldName ?? 'Calendar'),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/'),
+                onPressed: () => context.goNamed('campaign_list'),
               ),
               actions: [
                 if (isLoaded && campaign != null)
@@ -198,15 +224,13 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
       );
     }
 
-    if (_currentMonthIndex >= sortedMonths.length) {
-      _currentMonthIndex = sortedMonths.length - 1;
-    }
     if (_currentMonthIndex < 0) {
       _currentMonthIndex = 0;
     }
 
-    final currentMonth = sortedMonths[_currentMonthIndex];
-    final currentMonthQuests = questsForMonth(state.quests, _currentMonthIndex);
+    final monthInCycle = _currentMonthIndex % sortedMonths.length;
+    final currentMonth = sortedMonths[monthInCycle];
+    final currentMonthQuests = questsForMonth(state.quests, monthInCycle);
 
     final offset = computeMonthOffset(
       sortedMonths,
@@ -222,13 +246,11 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
           daysOfWeek: campaign.daysOfWeek,
           questsByCell: state.questsByCell,
           monthOffset: offset,
-          monthIndex: _currentMonthIndex,
+          monthIndex: monthInCycle,
           onPrevious: _currentMonthIndex > 0
               ? () => setState(() => _currentMonthIndex--)
               : null,
-          onNext: _currentMonthIndex < sortedMonths.length - 1
-              ? () => setState(() => _currentMonthIndex++)
-              : null,
+          onNext: () => setState(() => _currentMonthIndex++),
           onCellTap: (day) => showQuestsBottomSheet(context, day, campaign),
         ),
         const SizedBox(height: 20),

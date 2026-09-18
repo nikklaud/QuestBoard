@@ -229,9 +229,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           ),
                         );
                         GetIt.I<Talker>().debug(
-                          'User ${state.user.nickname} is autenticated',
+                          'User ${state.user.nickname} is authenticated',
                         );
-                        context.goNamed('campaign_list');
                       } else if (state is AuthFailure) {
                         ScaffoldMessenger.of(
                           context,

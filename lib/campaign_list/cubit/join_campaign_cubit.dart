@@ -34,11 +34,11 @@ class JoinCampaignCubit extends Cubit<JoinCampaignState> {
       final campaignRepo = GetIt.I<AbstractCampaignRepo>();
       final authRepo = GetIt.I<AbstractAuthRepo>();
 
-      final campaign = await campaignRepo.getCampaignByInviteCode(
+      final campaignId = await campaignRepo.getCampaignIdByInviteCode(
         state.inviteCode,
       );
 
-      if (campaign == null) {
+      if (campaignId == null) {
         emit(
           state.copyWith(
             status: JoinStatus.error,
@@ -49,27 +49,10 @@ class JoinCampaignCubit extends Cubit<JoinCampaignState> {
         return;
       }
 
-      if (campaign.ownerId == _currentUserId) {
-        emit(
-          state.copyWith(
-            status: JoinStatus.error,
-            errorMessage: 'You are the owner of this campaign.',
-          ),
-        );
-        return;
-      }
-
-      if (campaign.playerIds.contains(_currentUserId)) {
-        emit(
-          state.copyWith(
-            status: JoinStatus.error,
-            errorMessage: 'You are already a participant of this campaign.',
-          ),
-        );
-        return;
-      }
-
-      await campaignRepo.joinCampaign(campaign.id, _currentUserId);
+      final campaign = await campaignRepo.joinCampaign(
+        campaignId,
+        _currentUserId,
+      );
 
       final currentUser = await authRepo.getCurrentUser();
       if (currentUser != null) {

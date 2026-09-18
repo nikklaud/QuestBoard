@@ -45,9 +45,9 @@ class _CampaignHeroesPageState extends State<CampaignHeroesPage> {
 
     for (final playerId in playerIds) {
       try {
-        final user = await authRepo.getUserById(playerId);
-        if (user != null) {
-          nicknames[playerId] = user.nickname;
+        final nickname = await authRepo.getPublicNicknameById(playerId);
+        if (nickname != null) {
+          nicknames[playerId] = nickname;
         }
       } catch (_) {}
     }
@@ -79,7 +79,7 @@ class _CampaignHeroesPageState extends State<CampaignHeroesPage> {
               title: Text(campaign?.worldName ?? 'Heroes'),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/'),
+                onPressed: () => context.goNamed('campaign_list'),
               ),
               actions: [
                 if (isLoaded && campaign != null)

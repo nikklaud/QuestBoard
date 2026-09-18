@@ -64,23 +64,19 @@ class CampaignRepo implements AbstractCampaignRepo {
   }
 
   @override
-  Future<Campaign?> getCampaignByInviteCode(String inviteCode) async {
+  Future<String?> getCampaignIdByInviteCode(String inviteCode) async {
     try {
-      final snapshot = await _firebaseFirestore
-          .collection('campaigns')
-          .where('inviteCode', isEqualTo: inviteCode)
-          .limit(1)
+      final doc = await _firebaseFirestore
+          .collection('campaignInvites')
+          .doc(inviteCode)
           .get();
 
-      if (snapshot.docs.isEmpty) {
+      if (!doc.exists) {
         return null;
       }
-      return Campaign.fromMap(
-        snapshot.docs.first.id,
-        snapshot.docs.first.data(),
-      );
+      return doc.data()?['campaignId'] as String?;
     } catch (e) {
-      GetIt.I<Talker>().error('Error getting campaign by invite code: $e');
+      GetIt.I<Talker>().error('Error getting campaign id by invite code: $e');
       rethrow;
     }
   }
@@ -88,10 +84,18 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<void> createCampaign(Campaign campaign) async {
     try {
-      await _firebaseFirestore
-          .collection('campaigns')
-          .doc(campaign.id)
-          .set(campaign.toMap());
+      final batch = _firebaseFirestore.batch();
+      batch.set(
+        _firebaseFirestore.collection('campaigns').doc(campaign.id),
+        campaign.toMap(),
+      );
+      batch.set(
+        _firebaseFirestore
+            .collection('campaignInvites')
+            .doc(campaign.inviteCode),
+        {'campaignId': campaign.id},
+      );
+      await batch.commit();
     } catch (e) {
       GetIt.I<Talker>().error('Error creating campaign: $e');
       rethrow;
@@ -114,6 +118,12 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<void> deleteCampaign(String campaignId) async {
     try {
+      final campaignRef = _firebaseFirestore
+          .collection('campaigns')
+          .doc(campaignId);
+      final campaign = await campaignRef.get();
+      if (!campaign.exists) return;
+
       final batch = _firebaseFirestore.batch();
 
       // Delete quests
@@ -135,8 +145,13 @@ class CampaignRepo implements AbstractCampaignRepo {
       }
 
       // Delete campaign
-      final campaignRef = _firebaseFirestore.collection('campaigns').doc(campaignId);
       batch.delete(campaignRef);
+      final inviteCode = campaign.data()?['inviteCode'] as String?;
+      if (inviteCode != null && inviteCode.isNotEmpty) {
+        batch.delete(
+          _firebaseFirestore.collection('campaignInvites').doc(inviteCode),
+        );
+      }
 
       await batch.commit();
       GetIt.I<Talker>().debug('Campaign and related data deleted: $campaignId');
@@ -147,26 +162,18 @@ class CampaignRepo implements AbstractCampaignRepo {
   }
 
   @override
-  Future<void> joinCampaign(String campaignId, String userId) async {
+  Future<Campaign> joinCampaign(String campaignId, String userId) async {
     try {
+      await _firebaseFirestore.collection('campaigns').doc(campaignId).update({
+        'playerIds': FieldValue.arrayUnion([userId]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
       final campaign = await getCampaignById(campaignId);
-      if (campaign != null) {
-        final updatedPlayerIds = [...campaign.playerIds, userId];
-        final updatedCampaign = Campaign(
-          id: campaign.id,
-          campaignName: campaign.campaignName,
-          worldName: campaign.worldName,
-          ownerId: campaign.ownerId,
-          inviteCode: campaign.inviteCode,
-          daysOfWeek: campaign.daysOfWeek,
-          months: campaign.months,
-          playerIds: updatedPlayerIds,
-          createdAt: campaign.createdAt,
-          updatedAt: DateTime.now(),
-        );
-        await updateCampaign(updatedCampaign);
-        GetIt.I<Talker>().debug('User $userId joined campaign $campaignId');
+      if (campaign == null) {
+        throw StateError('Campaign not found after joining');
       }
+      GetIt.I<Talker>().debug('User $userId joined campaign $campaignId');
+      return campaign;
     } catch (e) {
       GetIt.I<Talker>().error('Error joining campaign: $e');
       rethrow;

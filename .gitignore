@@ -43,14 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-# Api keys
-
-lib/firebase_options.dart
-
-android/
-
-ios/
+/android/key.properties
+/android/*.jks
+/android/*.keystore
 
 .opencode/
 .agents/
@@ -59,10 +54,8 @@ ios/
 pubspec.lock
 .metadata
 
-# Firebase
-firebase.json
-android/app/google-services.json
-ios/Runner/GoogleService-Info.plist
+# Firebase client configuration is not secret and is required for reproducible
+# mobile builds.  Keep the generated configuration in version control.
 
 # Skills
 skills-lock.json

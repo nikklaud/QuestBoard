@@ -1,9 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quest_board/auth/bloc/auth_bloc.dart';
+import 'package:quest_board/auth/data/repo/abstract_auth_repo.dart';
 import 'package:quest_board/campaign_list/cubit/campaign_list_cubit.dart';
 import 'package:quest_board/campaign_list/cubit/create_campaign_cubit.dart';
 import 'package:quest_board/campaign_list/cubit/join_campaign_cubit.dart';
@@ -31,12 +31,31 @@ class _CampaignListPageState extends State<CampaignListPage> {
   void initState() {
     super.initState();
     _campaignListCubit = CampaignListCubit();
+    _loadCampaignsIfNeeded();
   }
 
-  void _loadCampaigns(String userId) {
-    if (_lastLoadedUserId != userId) {
-      _lastLoadedUserId = userId;
-      _campaignListCubit.loadCampaigns(userId);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureCampaignsLoaded();
+  }
+
+  void _loadCampaignsIfNeeded() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      final userId = authState.user.id;
+      if (_lastLoadedUserId != userId) {
+        _lastLoadedUserId = userId;
+        _campaignListCubit.loadCampaigns(userId);
+      }
+    }
+  }
+
+  void _ensureCampaignsLoaded() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      _lastLoadedUserId = null;
+      _loadCampaignsIfNeeded();
     }
   }
 
@@ -86,26 +105,20 @@ class _CampaignListPageState extends State<CampaignListPage> {
 
   Future<Map<String, String>> _getPlayerNicknames(Campaign campaign) async {
     final nicknames = <String, String>{};
-    final firestore = FirebaseFirestore.instance;
+    final authRepo = GetIt.I<AbstractAuthRepo>();
 
     try {
-      final ownerDoc = await firestore
-          .collection('users')
-          .doc(campaign.ownerId)
-          .get();
-      if (ownerDoc.exists) {
-        nicknames[campaign.ownerId] = ownerDoc['nickname'] ?? 'Unknown';
+      final nickname = await authRepo.getPublicNicknameById(campaign.ownerId);
+      if (nickname != null) {
+        nicknames[campaign.ownerId] = nickname;
       }
     } catch (_) {}
 
     for (final playerId in campaign.playerIds) {
       try {
-        final playerDoc = await firestore
-            .collection('users')
-            .doc(playerId)
-            .get();
-        if (playerDoc.exists) {
-          nicknames[playerId] = playerDoc['nickname'] ?? 'Unknown';
+        final nickname = await authRepo.getPublicNicknameById(playerId);
+        if (nickname != null) {
+          nicknames[playerId] = nickname;
         }
       } catch (_) {}
     }
@@ -201,7 +214,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
     return BlocListener<AuthBloc, AuthBlocState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          _loadCampaigns(state.user.id);
+          _ensureCampaignsLoaded();
         } else if (state is AuthUnauthenticated) {
           _lastLoadedUserId = null;
         }
@@ -352,7 +365,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        'You haven\'t joined any campaigns',
+                                        "You haven't joined any campaigns",
                                         style: theme.textTheme.bodyMedium
                                             ?.copyWith(
                                               color: theme
@@ -395,7 +408,16 @@ class _CampaignListPageState extends State<CampaignListPage> {
                       },
                     ),
                   )
-                : const Center(child: Text('Please log in to view campaigns')),
+                : BlocBuilder<AuthBloc, AuthBlocState>(
+                    builder: (context, authState) {
+                      if (authState is AuthBlocInitial) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return const Center(
+                        child: Text('Please log in to view campaigns'),
+                      );
+                    },
+                  ),
             floatingActionButton: FloatingActionButton(
               onPressed: _onCreateCampaignPressed,
               tooltip: 'Create Campaign',

@@ -8,7 +8,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 part 'campaign_list_state.dart';
 
 class CampaignListCubit extends Cubit<CampaignListState> {
-  CampaignListCubit() : super(CampaignListInitial());
+  CampaignListCubit() : super(CampaignListLoading());
 
   Future<void> loadCampaigns(String userId) async {
     emit(CampaignListLoading());
