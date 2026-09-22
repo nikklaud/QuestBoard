@@ -5,7 +5,11 @@ import 'package:quest_board/campaign_detail/data/model/hero.dart';
 import 'package:quest_board/campaign_list/data/model/custom_month.dart';
 
 class CreateQuestSheet extends StatefulWidget {
-  const CreateQuestSheet({required this.heroes, required this.months});
+  const CreateQuestSheet({
+    super.key,
+    required this.heroes,
+    required this.months,
+  });
 
   final List<CampaignHero> heroes;
   final List<CustomMonth> months;
@@ -206,6 +210,7 @@ class _CreateQuestSheetState extends State<CreateQuestSheet> {
 
 class HeroMultiSelect extends StatelessWidget {
   const HeroMultiSelect({
+    super.key,
     required this.heroes,
     required this.selectedIds,
     required this.onChanged,

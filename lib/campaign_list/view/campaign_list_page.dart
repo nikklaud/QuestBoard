@@ -144,17 +144,16 @@ class _CampaignListPageState extends State<CampaignListPage> {
         updatedAt: DateTime.now(),
       );
       await GetIt.I<AbstractCampaignRepo>().updateCampaign(updatedCampaign);
+      if (!mounted) return;
 
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         _campaignListCubit.refresh(authState.user.id);
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Player removed successfully')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Player removed successfully')),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -167,15 +166,15 @@ class _CampaignListPageState extends State<CampaignListPage> {
   void _deleteCampaign(Campaign campaign) async {
     try {
       await GetIt.I<AbstractCampaignRepo>().deleteCampaign(campaign.id);
+      if (!mounted) return;
+
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthAuthenticated) {
         _campaignListCubit.refresh(authState.user.id);
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Campaign deleted successfully')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Campaign deleted successfully')),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -219,10 +218,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
           _lastLoadedUserId = null;
         }
         if (state is AuthFailure) {
-          GetIt.I<Talker>().error(
-            'Auth failure, navigating to login: ${state.message}',
-          );
-          context.goNamed('login');
+          GetIt.I<Talker>().error('Auth failure: ${state.message}');
         }
       },
       child: BlocBuilder<AuthBloc, AuthBlocState>(
@@ -312,7 +308,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: state.ownedCampaigns.length,
-                                    separatorBuilder: (_, __) =>
+                                    separatorBuilder: (_, _) =>
                                         const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
                                       final campaign =
@@ -381,7 +377,7 @@ class _CampaignListPageState extends State<CampaignListPage> {
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: state.joinedCampaigns.length,
-                                    separatorBuilder: (_, __) =>
+                                    separatorBuilder: (_, _) =>
                                         const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
                                       final campaign =

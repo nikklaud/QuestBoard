@@ -120,7 +120,10 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
   }
 
   void showQuestsBottomSheet(BuildContext context, int day, Campaign campaign) {
-    final quests = _cubit.state.questsByCell['$_currentMonthIndex-$day'] ?? [];
+    final monthInCycle = campaign.months.isEmpty
+        ? 0
+        : _currentMonthIndex % campaign.months.length;
+    final quests = _cubit.state.questsByCell['$monthInCycle-$day'] ?? [];
 
     showModalBottomSheet(
       context: context,
@@ -152,7 +155,10 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => CreateQuestSheet(heroes: heroes, months: months),
+      builder: (context) => BlocProvider.value(
+        value: _cubit,
+        child: CreateQuestSheet(heroes: heroes, months: months),
+      ),
     );
   }
 
@@ -194,10 +200,13 @@ class _CampaignCalendarPageState extends State<CampaignCalendarPage> {
                 ? FloatingActionButton(
                     onPressed: () {
                       if (campaign != null) {
+                        final sortedMonths = List<CustomMonth>.from(
+                          campaign.months,
+                        )..sort((a, b) => a.order.compareTo(b.order));
                         showCreateQuestSheet(
                           context,
                           state.heroes,
-                          campaign.months,
+                          sortedMonths,
                         );
                       }
                     },

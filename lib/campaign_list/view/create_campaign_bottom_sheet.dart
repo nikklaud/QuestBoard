@@ -280,6 +280,12 @@ class _JoinCampaignTabContentState extends State<_JoinCampaignTabContent> {
           if (mounted) {
             Navigator.pop(context);
           }
+        } else if (state.status == JoinStatus.error &&
+            state.errorMessage != null) {
+          _isScanning = true;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         }
       },
       builder: (context, state) {

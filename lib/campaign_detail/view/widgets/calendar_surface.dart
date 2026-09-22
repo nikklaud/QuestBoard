@@ -6,6 +6,7 @@ import 'package:quest_board/campaign_detail/view/widgets/calendar_day_cell.dart'
 
 class CalendarSurface extends StatelessWidget {
   const CalendarSurface({
+    super.key,
     required this.month,
     required this.daysOfWeek,
     required this.questsByCell,
@@ -65,7 +66,7 @@ class CalendarSurface extends StatelessWidget {
 }
 
 class CalendarCard extends StatelessWidget {
-  const CalendarCard({required this.child});
+  const CalendarCard({super.key, required this.child});
 
   final Widget child;
 
@@ -98,6 +99,7 @@ class CalendarCard extends StatelessWidget {
 
 class MonthNavigator extends StatelessWidget {
   const MonthNavigator({
+    super.key,
     required this.months,
     required this.currentMonthIndex,
     required this.onPrevious,
@@ -136,6 +138,7 @@ class MonthNavigator extends StatelessWidget {
 
 class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
+    super.key,
     required this.month,
     required this.daysOfWeek,
     required this.questsByCell,
@@ -242,7 +245,7 @@ class CalendarMonthGrid extends StatelessWidget {
 }
 
 class DaysOfWeekHeader extends StatelessWidget {
-  const DaysOfWeekHeader({required this.daysOfWeek});
+  const DaysOfWeekHeader({super.key, required this.daysOfWeek});
 
   final List<DayOfWeek> daysOfWeek;
 
@@ -283,7 +286,11 @@ class DaysOfWeekHeader extends StatelessWidget {
 }
 
 class NavigatorButton extends StatelessWidget {
-  const NavigatorButton({required this.icon, required this.onPressed});
+  const NavigatorButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final VoidCallback? onPressed;

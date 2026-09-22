@@ -11,11 +11,10 @@ import 'package:uuid/uuid.dart';
 part 'create_campaign_state.dart';
 
 class CreateCampaignCubit extends Cubit<CreateCampaignState> {
-  CreateCampaignCubit({required String ownerId})
-    : _ownerId = ownerId,
-      super(const CreateCampaignState());
+  CreateCampaignCubit({required this.ownerId})
+    : super(const CreateCampaignState());
 
-  final String _ownerId;
+  final String ownerId;
 
   void updateCampaignName(String name) {
     emit(state.copyWith(campaignName: name));
@@ -140,7 +139,7 @@ class CreateCampaignCubit extends Cubit<CreateCampaignState> {
         id: const Uuid().v4(),
         campaignName: state.campaignName,
         worldName: state.worldName,
-        ownerId: _ownerId,
+        ownerId: ownerId,
         inviteCode: _generateInviteCode(),
         daysOfWeek: state.daysOfWeek,
         months: state.months,

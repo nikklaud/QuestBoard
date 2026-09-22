@@ -3,7 +3,11 @@ import 'package:quest_board/campaign_detail/data/model/quest.dart';
 import 'package:quest_board/campaign_list/data/model/campaign.dart';
 
 class QuestPreviewSection extends StatelessWidget {
-  const QuestPreviewSection({required this.campaign, required this.quests});
+  const QuestPreviewSection({
+    super.key,
+    required this.campaign,
+    required this.quests,
+  });
 
   final Campaign campaign;
   final List<Quest> quests;
@@ -35,7 +39,11 @@ class QuestPreviewSection extends StatelessWidget {
 }
 
 class QuestPreviewCard extends StatelessWidget {
-  const QuestPreviewCard({required this.quest, required this.campaign});
+  const QuestPreviewCard({
+    super.key,
+    required this.quest,
+    required this.campaign,
+  });
 
   final Quest quest;
   final Campaign campaign;
@@ -50,13 +58,15 @@ class QuestPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -82,7 +92,7 @@ class QuestPreviewCard extends StatelessWidget {
                 children: [
                   Text(
                     quest.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -91,8 +101,8 @@ class QuestPreviewCard extends StatelessWidget {
                     quest.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF7A7A7A),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),

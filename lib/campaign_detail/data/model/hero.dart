@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class CampaignHero extends Equatable {
@@ -16,14 +17,20 @@ class CampaignHero extends Equatable {
   });
 
   factory CampaignHero.fromMap(String id, Map<String, dynamic> data) {
+    DateTime? parseDate(dynamic dateValue) {
+      if (dateValue == null) return null;
+      if (dateValue is Timestamp) return dateValue.toDate();
+      if (dateValue is DateTime) return dateValue;
+      if (dateValue is String) return DateTime.tryParse(dateValue);
+      return null;
+    }
+
     return CampaignHero(
       id: id,
       campaignId: data['campaignId'] ?? '',
       name: data['name'] ?? '',
       playerId: data['playerId'] ?? '',
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as dynamic).toDate()
-          : null,
+      createdAt: parseDate(data['createdAt']),
     );
   }
 

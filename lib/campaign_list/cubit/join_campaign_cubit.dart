@@ -49,6 +49,37 @@ class JoinCampaignCubit extends Cubit<JoinCampaignState> {
         return;
       }
 
+      final existingCampaign = await campaignRepo.getCampaignById(campaignId);
+      if (existingCampaign == null) {
+        emit(
+          state.copyWith(
+            status: JoinStatus.error,
+            errorMessage: 'Campaign not found.',
+          ),
+        );
+        return;
+      }
+
+      if (existingCampaign.ownerId == _currentUserId) {
+        emit(
+          state.copyWith(
+            status: JoinStatus.error,
+            errorMessage: 'You are the owner of this campaign.',
+          ),
+        );
+        return;
+      }
+
+      if (existingCampaign.playerIds.contains(_currentUserId)) {
+        emit(
+          state.copyWith(
+            status: JoinStatus.error,
+            errorMessage: 'You have already joined this campaign.',
+          ),
+        );
+        return;
+      }
+
       final campaign = await campaignRepo.joinCampaign(
         campaignId,
         _currentUserId,
@@ -56,10 +87,10 @@ class JoinCampaignCubit extends Cubit<JoinCampaignState> {
 
       final currentUser = await authRepo.getCurrentUser();
       if (currentUser != null) {
-        final updatedCampaignIds = [
+        final updatedCampaignIds = {
           ...currentUser.joinedCampaignIds,
           campaign.id,
-        ];
+        }.toList();
         await authRepo.updateUserJoinedCampaigns(
           currentUser.id,
           updatedCampaignIds,

@@ -27,7 +27,11 @@ void main() {
     test('handles custom week length', () {
       final months = [
         CustomMonth(name: 'M1', daysCount: 10, order: 0), // 10 % 5 = 0
-        CustomMonth(name: 'M2', daysCount: 10, order: 1), // 10 % 5 = 0, offset = 0
+        CustomMonth(
+          name: 'M2',
+          daysCount: 10,
+          order: 1,
+        ), // 10 % 5 = 0, offset = 0
       ];
       expect(_computeMonthOffset(months, 0, 5), equals(0));
       expect(_computeMonthOffset(months, 1, 5), equals(0));
@@ -35,7 +39,11 @@ void main() {
   });
 }
 
-int _computeMonthOffset(List<CustomMonth> sortedMonths, int monthIndex, int daysOfWeekLength) {
+int _computeMonthOffset(
+  List<CustomMonth> sortedMonths,
+  int monthIndex,
+  int daysOfWeekLength,
+) {
   if (daysOfWeekLength == 0) return 0;
   int offset = 0;
   for (int i = 0; i < monthIndex; i++) {

@@ -5,15 +5,14 @@ import 'package:quest_board/campaign_list/data/repo/abstract_campaign_repo.dart'
 import 'package:talker_flutter/talker_flutter.dart';
 
 class CampaignRepo implements AbstractCampaignRepo {
-  final FirebaseFirestore _firebaseFirestore;
+  final FirebaseFirestore firebaseFirestore;
 
-  CampaignRepo({required FirebaseFirestore firebaseFirestore})
-    : _firebaseFirestore = firebaseFirestore;
+  CampaignRepo({required this.firebaseFirestore});
 
   @override
   Future<List<Campaign>> getCampaignsByOwner(String userId) async {
     try {
-      final snapshot = await _firebaseFirestore
+      final snapshot = await firebaseFirestore
           .collection('campaigns')
           .where('ownerId', isEqualTo: userId)
           .get();
@@ -30,7 +29,7 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<List<Campaign>> getCampaignsByPlayer(String userId) async {
     try {
-      final snapshot = await _firebaseFirestore
+      final snapshot = await firebaseFirestore
           .collection('campaigns')
           .where('playerIds', arrayContains: userId)
           .get();
@@ -47,7 +46,7 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<Campaign?> getCampaignById(String campaignId) async {
     try {
-      final doc = await _firebaseFirestore
+      final doc = await firebaseFirestore
           .collection('campaigns')
           .doc(campaignId)
           .get();
@@ -66,7 +65,7 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<String?> getCampaignIdByInviteCode(String inviteCode) async {
     try {
-      final doc = await _firebaseFirestore
+      final doc = await firebaseFirestore
           .collection('campaignInvites')
           .doc(inviteCode)
           .get();
@@ -84,13 +83,13 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<void> createCampaign(Campaign campaign) async {
     try {
-      final batch = _firebaseFirestore.batch();
+      final batch = firebaseFirestore.batch();
       batch.set(
-        _firebaseFirestore.collection('campaigns').doc(campaign.id),
+        firebaseFirestore.collection('campaigns').doc(campaign.id),
         campaign.toMap(),
       );
       batch.set(
-        _firebaseFirestore
+        firebaseFirestore
             .collection('campaignInvites')
             .doc(campaign.inviteCode),
         {'campaignId': campaign.id},
@@ -105,7 +104,7 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<void> updateCampaign(Campaign campaign) async {
     try {
-      await _firebaseFirestore
+      await firebaseFirestore
           .collection('campaigns')
           .doc(campaign.id)
           .update(campaign.toMap());
@@ -118,16 +117,16 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<void> deleteCampaign(String campaignId) async {
     try {
-      final campaignRef = _firebaseFirestore
+      final campaignRef = firebaseFirestore
           .collection('campaigns')
           .doc(campaignId);
       final campaign = await campaignRef.get();
       if (!campaign.exists) return;
 
-      final batch = _firebaseFirestore.batch();
+      final batch = firebaseFirestore.batch();
 
       // Delete quests
-      final questsSnapshot = await _firebaseFirestore
+      final questsSnapshot = await firebaseFirestore
           .collection('quests')
           .where('campaignId', isEqualTo: campaignId)
           .get();
@@ -136,7 +135,7 @@ class CampaignRepo implements AbstractCampaignRepo {
       }
 
       // Delete heroes
-      final heroesSnapshot = await _firebaseFirestore
+      final heroesSnapshot = await firebaseFirestore
           .collection('heroes')
           .where('campaignId', isEqualTo: campaignId)
           .get();
@@ -149,7 +148,7 @@ class CampaignRepo implements AbstractCampaignRepo {
       final inviteCode = campaign.data()?['inviteCode'] as String?;
       if (inviteCode != null && inviteCode.isNotEmpty) {
         batch.delete(
-          _firebaseFirestore.collection('campaignInvites').doc(inviteCode),
+          firebaseFirestore.collection('campaignInvites').doc(inviteCode),
         );
       }
 
@@ -164,7 +163,7 @@ class CampaignRepo implements AbstractCampaignRepo {
   @override
   Future<Campaign> joinCampaign(String campaignId, String userId) async {
     try {
-      await _firebaseFirestore.collection('campaigns').doc(campaignId).update({
+      await firebaseFirestore.collection('campaigns').doc(campaignId).update({
         'playerIds': FieldValue.arrayUnion([userId]),
         'updatedAt': FieldValue.serverTimestamp(),
       });

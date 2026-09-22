@@ -147,7 +147,54 @@ class AuthRepo implements AbstractAuthRepo {
       throw ArgumentError('The nickname does not match');
     }
 
-    // Delete Firestore profile data while the user still has an authenticated
+    // 1. Find and delete all campaigns owned by the user (along with quests, heroes, and invites)
+    // so they are removed from storage and no longer visible to any players.
+    final ownedCampaignsSnapshot = await _firebaseFirestore
+        .collection('campaigns')
+        .where('ownerId', isEqualTo: authUser.uid)
+        .get();
+
+    for (final campaignDoc in ownedCampaignsSnapshot.docs) {
+      final campaignId = campaignDoc.id;
+      final inviteCode = campaignDoc.data()['inviteCode'] as String?;
+
+      final batch = _firebaseFirestore.batch();
+
+      // Delete quests for this campaign
+      final questsSnapshot = await _firebaseFirestore
+          .collection('quests')
+          .where('campaignId', isEqualTo: campaignId)
+          .get();
+      for (final questDoc in questsSnapshot.docs) {
+        batch.delete(questDoc.reference);
+      }
+
+      // Delete heroes for this campaign
+      final heroesSnapshot = await _firebaseFirestore
+          .collection('heroes')
+          .where('campaignId', isEqualTo: campaignId)
+          .get();
+      for (final heroDoc in heroesSnapshot.docs) {
+        batch.delete(heroDoc.reference);
+      }
+
+      // Delete invite code if present
+      if (inviteCode != null && inviteCode.isNotEmpty) {
+        batch.delete(
+          _firebaseFirestore.collection('campaignInvites').doc(inviteCode),
+        );
+      }
+
+      // Delete the campaign document itself
+      batch.delete(campaignDoc.reference);
+
+      await batch.commit();
+      GetIt.I<Talker>().debug(
+        'Campaign and related data deleted for owned campaign: $campaignId',
+      );
+    }
+
+    // 2. Delete Firestore profile data while the user still has an authenticated
     // Firestore session, then remove the Firebase Authentication identity.
     final batch = _firebaseFirestore.batch();
     batch.delete(userRef);

@@ -3,6 +3,7 @@ import 'package:quest_board/campaign_detail/data/model/quest.dart';
 
 class CalendarDayCell extends StatelessWidget {
   const CalendarDayCell({
+    super.key,
     required this.day,
     required this.quests,
     required this.cellSize,
@@ -67,7 +68,7 @@ class CalendarDayCell extends StatelessWidget {
 }
 
 class QuestDots extends StatelessWidget {
-  const QuestDots({required this.quests, required this.compact});
+  const QuestDots({super.key, required this.quests, required this.compact});
 
   final List<Quest> quests;
   final bool compact;

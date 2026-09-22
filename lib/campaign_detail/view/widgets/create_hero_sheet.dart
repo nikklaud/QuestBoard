@@ -6,7 +6,7 @@ import 'package:quest_board/campaign_detail/cubit/campaign_detail_cubit.dart';
 import 'package:quest_board/campaign_list/data/model/campaign.dart';
 
 class CreateHeroSheet extends StatefulWidget {
-  const CreateHeroSheet({required this.campaign});
+  const CreateHeroSheet({super.key, required this.campaign});
 
   final Campaign campaign;
 

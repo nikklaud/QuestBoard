@@ -59,7 +59,10 @@ class _CampaignHeroesPageState extends State<CampaignHeroesPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => CreateHeroSheet(campaign: campaign),
+      builder: (context) => BlocProvider.value(
+        value: _cubit,
+        child: CreateHeroSheet(campaign: campaign),
+      ),
     );
   }
 

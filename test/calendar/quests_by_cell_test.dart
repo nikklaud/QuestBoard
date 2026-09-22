@@ -5,9 +5,7 @@ import 'package:quest_board/campaign_list/data/model/custom_month.dart';
 void main() {
   group('questsByCell computation', () {
     test('single-day quest appears only on its day', () {
-      final months = [
-        CustomMonth(name: 'M1', daysCount: 30, order: 0),
-      ];
+      final months = [CustomMonth(name: 'M1', daysCount: 30, order: 0)];
       final quests = [
         Quest(
           id: 'q1',
@@ -91,9 +89,7 @@ void main() {
     });
 
     test('multiple quests on same day', () {
-      final months = [
-        CustomMonth(name: 'M1', daysCount: 30, order: 0),
-      ];
+      final months = [CustomMonth(name: 'M1', daysCount: 30, order: 0)];
       final quests = [
         Quest(
           id: 'q1',
@@ -128,21 +124,22 @@ void main() {
     });
 
     test('many quests on same day', () {
-      final months = [
-        CustomMonth(name: 'M1', daysCount: 30, order: 0),
-      ];
-      final quests = List.generate(10, (i) => Quest(
-        id: 'q$i',
-        campaignId: 'c1',
-        title: 'Q$i',
-        description: '',
-        color: '#FF0000',
-        startMonthIndex: 0,
-        startDayNumber: 1,
-        endMonthIndex: 0,
-        endDayNumber: 1,
-        heroIds: const [],
-      ));
+      final months = [CustomMonth(name: 'M1', daysCount: 30, order: 0)];
+      final quests = List.generate(
+        10,
+        (i) => Quest(
+          id: 'q$i',
+          campaignId: 'c1',
+          title: 'Q$i',
+          description: '',
+          color: '#FF0000',
+          startMonthIndex: 0,
+          startDayNumber: 1,
+          endMonthIndex: 0,
+          endDayNumber: 1,
+          heroIds: const [],
+        ),
+      );
 
       final result = _computeQuestsByCell(quests, months);
       final cellQuests = result['0-1'];
@@ -151,7 +148,10 @@ void main() {
   });
 }
 
-Map<String, List<Quest>> _computeQuestsByCell(List<Quest> quests, List<CustomMonth> months) {
+Map<String, List<Quest>> _computeQuestsByCell(
+  List<Quest> quests,
+  List<CustomMonth> months,
+) {
   final Map<String, List<Quest>> questsByCell = {};
   for (final quest in quests) {
     for (var m = quest.startMonthIndex; m <= quest.endMonthIndex; m++) {

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -38,6 +39,14 @@ class Quest extends Equatable {
   }
 
   factory Quest.fromMap(String id, Map<String, dynamic> data) {
+    DateTime? parseDate(dynamic dateValue) {
+      if (dateValue == null) return null;
+      if (dateValue is Timestamp) return dateValue.toDate();
+      if (dateValue is DateTime) return dateValue;
+      if (dateValue is String) return DateTime.tryParse(dateValue);
+      return null;
+    }
+
     return Quest(
       id: id,
       campaignId: data['campaignId'] ?? '',
@@ -49,9 +58,7 @@ class Quest extends Equatable {
       endMonthIndex: data['endMonthIndex'] ?? 0,
       endDayNumber: data['endDayNumber'] ?? 1,
       heroIds: List<String>.from(data['heroIds'] ?? []),
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as dynamic).toDate()
-          : null,
+      createdAt: parseDate(data['createdAt']),
     );
   }
 

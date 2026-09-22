@@ -59,7 +59,7 @@ class CampaignCard extends StatelessWidget {
                         )
                       : null,
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

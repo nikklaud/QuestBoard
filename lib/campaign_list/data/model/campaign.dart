@@ -29,20 +29,12 @@ class Campaign extends Equatable {
   });
 
   factory Campaign.fromMap(String id, Map<String, dynamic> data) {
-    DateTime _parseDate(dynamic dateValue) {
-      if (dateValue == null) {
-        return DateTime.now();
-      }
-
-      if (dateValue is Timestamp) {
-        return dateValue.toDate();
-      }
-
-      if (dateValue is String) {
-        return DateTime.parse(dateValue);
-      }
-
-      return DateTime.now();
+    DateTime? parseDate(dynamic dateValue) {
+      if (dateValue == null) return null;
+      if (dateValue is Timestamp) return dateValue.toDate();
+      if (dateValue is DateTime) return dateValue;
+      if (dateValue is String) return DateTime.tryParse(dateValue);
+      return null;
     }
 
     return Campaign(
@@ -62,12 +54,8 @@ class Campaign extends Equatable {
               .toList() ??
           [],
       playerIds: List<String>.from(data['playerIds'] ?? []),
-      createdAt: _parseDate(data['createdAt']),
-      // updatedAt intentionally remains null when absent; _parseDate would incorrectly
-      // return DateTime.now() instead of preserving nullability
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as dynamic).toDate()
-          : null,
+      createdAt: parseDate(data['createdAt']) ?? DateTime.now(),
+      updatedAt: parseDate(data['updatedAt']),
     );
   }
 

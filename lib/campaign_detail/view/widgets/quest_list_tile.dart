@@ -3,7 +3,7 @@ import 'package:quest_board/campaign_detail/data/model/quest.dart';
 import 'package:quest_board/campaign_list/data/model/campaign.dart';
 
 class QuestListTile extends StatefulWidget {
-  const QuestListTile({required this.quest, required this.campaign});
+  const QuestListTile({super.key, required this.quest, required this.campaign});
 
   final Quest quest;
   final Campaign campaign;

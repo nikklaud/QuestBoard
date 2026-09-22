@@ -43,7 +43,7 @@ class _CampaignEditSheetState extends State<CampaignEditSheet> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (_formKey.currentState?.validate() ?? false) {
       final campaignName = _campaignNameController.text.trim();
       final worldName = _worldNameController.text.trim();
@@ -55,7 +55,7 @@ class _CampaignEditSheetState extends State<CampaignEditSheet> {
       }
 
       try {
-        GetIt.I<AbstractCampaignRepo>().updateCampaign(
+        await GetIt.I<AbstractCampaignRepo>().updateCampaign(
           widget.campaign.copyWith(
             campaignName: campaignName,
             worldName: worldName,
