@@ -56,8 +56,8 @@ app.*.map.json
 pubspec.lock
 .metadata
 
-# Firebase generated configuration may contain project credentials.
-/lib/firebase_options.dart
+# Firebase client configuration contains public project identifiers and is
+# required for reproducible Flutter builds. Keep firebase_options.dart tracked.
 
 # Skills
 skills-lock.json
