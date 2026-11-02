@@ -46,8 +46,6 @@ app.*.map.json
 /android/key.properties
 /android/*.jks
 /android/*.keystore
-/android/google-services.json
-/android/app/google-services.json
 
 .opencode/
 .agents/
@@ -55,9 +53,6 @@ app.*.map.json
 # Dart/Flutter
 pubspec.lock
 .metadata
-
-# Firebase generated configuration may contain project credentials.
-/lib/firebase_options.dart
 
 # Skills
 skills-lock.json
