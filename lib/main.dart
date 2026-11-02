@@ -13,7 +13,6 @@ import 'package:quest_board/campaign_detail/data/repo/hero_repo.dart';
 import 'package:quest_board/campaign_detail/data/repo/quest_repo.dart';
 import 'package:quest_board/campaign_list/data/repo/abstract_campaign_repo.dart';
 import 'package:quest_board/campaign_list/data/repo/campaign_repo.dart';
-import 'package:quest_board/firebase_options.dart';
 import 'package:quest_board/router.dart';
 import 'package:quest_board/settings/cubit/theme_cubit.dart';
 import 'package:quest_board/settings/data/repo/abstract_settings_repo.dart';
@@ -26,7 +25,7 @@ late final AuthBloc authBloc;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp();
 
   GetIt.I.registerLazySingleton<AbstractAuthRepo>(
     () => AuthRepo(
